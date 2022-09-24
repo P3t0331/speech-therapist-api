@@ -36,7 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
         Checks to be sure that the received password and confirm_password
         fields are exactly the same
         """
-        if data['password'] != data.pop('confirm_password'):
+        if data.get('password') != data.pop('confirm_password', None):
             raise serializers.ValidationError("Passwords do not match")
         return data
 
