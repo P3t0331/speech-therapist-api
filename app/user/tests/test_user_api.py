@@ -8,7 +8,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-CREATE_USER_URL = reverse('user:create')
+CREATE_USER_URL = reverse('user:create-patient')
+CREATE_THERAPIST_URL = reverse('user:create-therapist')
 TOKEN_URL = reverse('user:token')
 ME_URL = reverse('user:me')
 
@@ -33,6 +34,21 @@ class PublicUserApiTests(TestCase):
             'confirm_password': 'testpass123',
         }
         res = self.client.post(CREATE_USER_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        user = get_user_model().objects.get(email=payload['email'])
+        self.assertTrue(user.check_password(payload['password']))
+        self.assertNotIn('password', res.data)
+
+    def test_create_therapist_user_success(self):
+        """Test creating a user is successful"""
+        payload = {
+            'email': 'test@example.com',
+            'password': 'testpass123',
+            'name': 'Test Name',
+            'confirm_password': 'testpass123',
+        }
+        res = self.client.post(CREATE_THERAPIST_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         user = get_user_model().objects.get(email=payload['email'])
@@ -129,6 +145,7 @@ class PrivateUserApiTests(TestCase):
         self.assertEqual(res.data, {
             'name': self.user.name,
             'email': self.user.email,
+            'is_therapist': self.user.is_therapist
         })
 
     def test_post_me_not_allowed(self):

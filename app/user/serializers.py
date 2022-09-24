@@ -15,11 +15,13 @@ class UserSerializer(serializers.ModelSerializer):
         allow_blank=False,
         write_only=True,
         min_length=8,
+        style={'input_type': 'password'}
     )
 
     class Meta:
         model = get_user_model()
-        fields = ['email', 'name', 'password', 'confirm_password']
+        fields = ['email', 'name', 'password', 'confirm_password',
+                  'is_therapist']
         extra_kwargs = {
             'password': {
                 'write_only': True,
@@ -27,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
                 'style': {'input_type': 'password'}
                 }
             }
+        read_only_fields = ['is_therapist']
 
     def validate(self, data):
         """
@@ -49,6 +52,13 @@ class UserSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.save()
         return user
+
+
+class UserTherapistSerializer(UserSerializer):
+    """Serializer for the therapist user object"""
+    def create(self, validated_data):
+        """Create and return a user with encrypted password"""
+        return get_user_model().objects.create_therapist_user(**validated_data)
 
 
 class AuthTokenSerializer(serializers.Serializer):
