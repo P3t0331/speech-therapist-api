@@ -12,7 +12,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Choice
-        fields = ['data', 'side', 'assigned_to_identifier']
+        fields = ['data', 'left_side', 'assigned_to_identifier']
 
 
 class QuestionSerializer(serializers.ModelSerializer):
