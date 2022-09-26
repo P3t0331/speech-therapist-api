@@ -1,12 +1,12 @@
 """
 Views for the Task API
 """
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from task.permissions import IsTherapist, IsOwnerOfObject
-from core.models import Task
+from core.models import Task, Question, Choice
 from task import serializers
 
 
@@ -35,3 +35,29 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Create a new Task"""
         serializer.save(created_by=self.request.user)
+
+
+class QuestionsViewSet(mixins.DestroyModelMixin,
+                       mixins.UpdateModelMixin,
+                       mixins.ListModelMixin,
+                       viewsets.GenericViewSet):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.QuestionSerializer
+    queryset = Question.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.order_by('-id').distinct()
+
+
+class ChoiceViewSet(mixins.DestroyModelMixin,
+                    mixins.UpdateModelMixin,
+                    mixins.ListModelMixin,
+                    viewsets.GenericViewSet):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.ChoiceSerializer
+    queryset = Choice.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.order_by('-id').distinct()

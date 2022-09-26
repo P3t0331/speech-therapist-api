@@ -55,6 +55,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
 
+class Choice(models.Model):
+    data = models.CharField(max_length=255)
+    left_side = models.BooleanField(default=True)
+    assigned_to_identifier = models.IntegerField()
+
+    def __str__(self):
+        return self.data
+
+
+class Question(models.Model):
+    heading = models.CharField(max_length=255, blank=True)
+    left_choice = models.ManyToManyField(
+        'Choice',
+        related_name='left_choice'
+        )
+    right_choice = models.ManyToManyField(
+        'Choice',
+        related_name='right_choice'
+        )
+
+    def __str__(self):
+        return self.heading
+
+
 class Task(models.Model):
     name = models.CharField(max_length=255)
     type = models.IntegerField()
@@ -62,8 +86,8 @@ class Task(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name='test',
     )
+    questions = models.ManyToManyField('Question')
 
     def __str__(self):
         return self.name
