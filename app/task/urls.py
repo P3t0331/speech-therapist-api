@@ -12,7 +12,7 @@ from task import views
 router = DefaultRouter()
 router.register('tasks', views.TaskViewSet)
 router.register('questions', views.QuestionsViewSet)
-router.register('choices', views.ChoiceViewSet)
+router.register('basic_choices', views.BasicChoiceViewSet)
 
 app_name = 'task'
 

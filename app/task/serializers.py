@@ -1,71 +1,74 @@
 """
 Serializers for Task APIs
 """
+import random
 
 from rest_framework import serializers
+from core.models import Task, Question, BasicChoice
 
-from core.models import Task, Question, Choice
 
-
-class ChoiceSerializer(serializers.ModelSerializer):
-    """Serializer for Choices"""
-
+class BasicChoiceSerializer(serializers.ModelSerializer):
+    """Serializer for Basic Choices"""
     class Meta:
-        model = Choice
-        fields = ['data', 'left_side', 'assigned_to_identifier']
+        model = BasicChoice
+        fields = ['id', 'text', 'image']
+        read_only_fields = ['id']
+        extra_kwargs = {'image': {'required': 'True'}}
 
 
 class QuestionSerializer(serializers.ModelSerializer):
     """Serializer for Questions"""
-    left_choice = ChoiceSerializer(many=True, required=False)
-    right_choice = ChoiceSerializer(many=True, required=False)
+    choices = BasicChoiceSerializer(many=True, required=False)
 
     class Meta:
         model = Question
-        fields = ['heading', 'left_choice', 'right_choice']
+        fields = ['id', 'heading', 'choices']
+        read_only_fields = ['id']
 
-    def _get_or_create_choices(self, choices, question):
-        for choice in choices:
-            choice_obj, created = Choice.objects.get_or_create(
-                **choice
-            )
-            if choice.side is True:
-                question.left_choice.add(choice_obj)
-            else:
-                question.right_choice.add(choice_obj)
+    def _get_choices(self, question):
+        choices = list(BasicChoice.objects.all())
+        random_choices = random.sample(choices, 3)
+        for choice in random_choices:
+            question.choices.add(choice)
 
     def create(self, validated_data):
-        left_choices = validated_data.pop('left_choice', [])
-        right_choices = validated_data.pop('right_choice', [])
-
         question = Question.objects.create(**validated_data)
-        self._get_or_create_choices(left_choices, question)
-        self._get_or_create_choices(right_choices, question)
+        self._get_choices(question)
         return question
 
 
 class TaskSerializer(serializers.ModelSerializer):
     """Serializer for Tasks"""
-    questions = QuestionSerializer(many=True, required=False)
+    questions = QuestionSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = Task
         fields = ['id', 'name', 'type', 'difficulty', 'created_by',
                   'questions']
-        read_only_fields = ['id', 'created_by']
+        read_only_fields = ['id', 'created_by', 'questions']
 
-    def _get_or_create_questions(self, questions, task):
-        for question in questions:
-            question_obj, created = Question.objects.get_or_create(
-                **question
-            )
-            task.questions.add(question_obj)
+    def _get_choices(self, question, task):
+        choices = list(BasicChoice.objects.exclude(assigned_to=task))
+        if len(choices) < 30:
+            raise serializers.ValidationError(
+                "There is not enough data to create exercise with "
+                f"this type, upload more images! (Missing: {30-len(choices)})"
+                )
+        random_choices = random.sample(choices, 3)
+        for choice in random_choices:
+            choice.assigned_to.add(task)
+            question.choices.add(choice)
+
+    def _create_questions(self, task):
+        for i in range(10):
+            question = Question.objects.create(heading=f'Otazka{i}')
+            self._get_choices(question, task)
+            task.questions.add(question)
 
     def create(self, validated_data):
         """Create a task"""
-        questions = validated_data.pop('questions', [])
         task = Task.objects.create(**validated_data)
-        self._get_or_create_questions(questions, task)
+        self._create_questions(task)
         return task
 
     def update(self, instance, validated_data):
@@ -73,7 +76,7 @@ class TaskSerializer(serializers.ModelSerializer):
         questions = validated_data.pop('questions', None)
         if questions is not None:
             instance.questions.clear()
-            self._get_or_create_questions(questions, instance)
+            self._create_questions(instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

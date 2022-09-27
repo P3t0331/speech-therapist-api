@@ -50,4 +50,4 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Task)
 admin.site.register(models.Question)
-admin.site.register(models.Choice)
+admin.site.register(models.BasicChoice)

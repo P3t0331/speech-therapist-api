@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from task.permissions import IsTherapist, IsOwnerOfObject
-from core.models import Task, Question, Choice
+from core.models import Task, Question, BasicChoice
 from task import serializers
 
 
@@ -41,6 +41,7 @@ class QuestionsViewSet(mixins.DestroyModelMixin,
                        mixins.UpdateModelMixin,
                        mixins.ListModelMixin,
                        viewsets.GenericViewSet):
+    """View for managing Question APIs"""
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.QuestionSerializer
@@ -50,14 +51,12 @@ class QuestionsViewSet(mixins.DestroyModelMixin,
         return self.queryset.order_by('-id').distinct()
 
 
-class ChoiceViewSet(mixins.DestroyModelMixin,
-                    mixins.UpdateModelMixin,
-                    mixins.ListModelMixin,
-                    viewsets.GenericViewSet):
+class BasicChoiceViewSet(viewsets.ModelViewSet):
+    """View for managing Basic Choices APIs"""
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = serializers.ChoiceSerializer
-    queryset = Choice.objects.all()
+    serializer_class = serializers.BasicChoiceSerializer
+    queryset = BasicChoice.objects.all()
 
     def get_queryset(self):
         return self.queryset.order_by('-id').distinct()
