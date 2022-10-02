@@ -4,16 +4,56 @@ Serializers for Task APIs
 import random
 
 from rest_framework import serializers
-from core.models import Task, Question, BasicChoice
+from core.models import Task, Question, BasicChoice, Tag
+
+
+class TagSerializer(serializers.ModelSerializer):
+    """Serializer for tags"""
+
+    class Meta:
+        model = Tag
+        fields = ['id', 'text']
+        read_only_fields = ['id']
 
 
 class BasicChoiceSerializer(serializers.ModelSerializer):
     """Serializer for Basic Choices"""
+    tags = TagSerializer(many=True, required=False)
+
     class Meta:
         model = BasicChoice
-        fields = ['id', 'text', 'image']
+        fields = ['id', 'text', 'image', 'tags']
         read_only_fields = ['id']
         extra_kwargs = {'image': {'required': 'True'}}
+
+    def _get_or_create_tags(self, tags, basic_choice):
+        auth_user = self.context['request'].user
+        for tag in tags:
+            tag_obj, created = Tag.objects.get_or_create(
+                user=auth_user,
+                **tag,
+            )
+            basic_choice.tags.add(tag_obj)
+
+    def create(self, validated_data):
+        tags = validated_data.pop('tags', [])
+        choice = BasicChoice.objects.create(**validated_data)
+        self._get_or_create_tags(tags, choice)
+        return choice
+
+    def update(self, instance, validated_data):
+        """Update recipe"""
+        tags = validated_data.pop('tags', None)
+
+        if tags is not None:
+            instance.tags.clear()
+            self._get_or_create_tags(tags, instance)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -39,25 +79,30 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     """Serializer for Tasks"""
+    tags = TagSerializer(many=True, required=False)
     questions = QuestionSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = Task
         fields = ['id', 'name', 'type', 'difficulty', 'created_by',
-                  'questions']
+                  'questions', 'tags']
         read_only_fields = ['id', 'created_by', 'questions']
 
     def _get_choices(self, question, task):
         choices = list(BasicChoice.objects.exclude(assigned_to=task))
-        if len(choices) < 30:
-            raise serializers.ValidationError(
-                "There is not enough data to create exercise with "
-                f"this type, upload more images! (Missing: {30-len(choices)})"
-                )
         random_choices = random.sample(choices, 3)
         for choice in random_choices:
             choice.assigned_to.add(task)
             question.choices.add(choice)
+
+    def _get_or_create_tags(self, tags, task):
+        auth_user = self.context['request'].user
+        for tag in tags:
+            tag_obj, created = Tag.objects.get_or_create(
+                user=auth_user,
+                **tag,
+            )
+            task.tags.add(tag_obj)
 
     def _create_questions(self, task):
         for i in range(10):
@@ -67,13 +112,24 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create a task"""
+        tags = validated_data.pop('tags', [])
         task = Task.objects.create(**validated_data)
+        if len(list(BasicChoice.objects.exclude(assigned_to=task))) < 30:
+            raise serializers.ValidationError(
+                "There is not enough data to create exercise"
+            )
         self._create_questions(task)
+        self._get_or_create_tags(tags, task)
         return task
 
     def update(self, instance, validated_data):
         """Update task"""
+        tags = validated_data.pop('tags', None)
         questions = validated_data.pop('questions', None)
+        if tags is not None:
+            instance.tags.clear()
+            self._get_or_create_tags(tags, instance)
+
         if questions is not None:
             instance.questions.clear()
             self._create_questions(instance)

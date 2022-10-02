@@ -13,6 +13,7 @@ router = DefaultRouter()
 router.register('tasks', views.TaskViewSet)
 router.register('questions', views.QuestionsViewSet)
 router.register('basic_choices', views.BasicChoiceViewSet)
+router.register('tags', views.TagViewSet)
 
 app_name = 'task'
 

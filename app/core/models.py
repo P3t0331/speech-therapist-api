@@ -82,6 +82,7 @@ class Task(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
     )
+    tags = models.ManyToManyField('Tag')
     questions = models.ManyToManyField('Question')
 
     def __str__(self):
@@ -91,7 +92,12 @@ class Task(models.Model):
 class BasicChoice(models.Model):
     text = models.CharField(max_length=255)
     image = models.ImageField(null=False, upload_to=recipe_image_file_path)
-    assigned_to = models.ManyToManyField('Task')
+    assigned_to = models.ManyToManyField('Task', blank=True)
+    tags = models.ManyToManyField('Tag')
 
     def __str__(self):
         return self.text
+
+
+class Tag(models.Model):
+    text = models.CharField(max_length=255)

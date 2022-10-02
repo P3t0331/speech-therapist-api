@@ -6,8 +6,18 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from task.permissions import IsTherapist, IsOwnerOfObject
-from core.models import Task, Question, BasicChoice
+from core.models import Task, Question, BasicChoice, Tag
 from task import serializers
+
+
+def check_permissions(self):
+    if self.action == 'create':
+        composed_perm = IsAuthenticated & IsTherapist
+        return [composed_perm()]
+    if self.action == 'destroy' or self.action == 'update' \
+       or self.action == 'partial_update':
+        composed_perm = IsAuthenticated & IsTherapist & IsOwnerOfObject
+        return [composed_perm()]
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -23,13 +33,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-id').distinct()
 
     def get_permissions(self):
-        if self.action == 'create':
-            composed_perm = IsAuthenticated & IsTherapist
-            return [composed_perm()]
-        if self.action == 'destroy' or self.action == 'update' \
-           or self.action == 'partial_update':
-            composed_perm = IsAuthenticated & IsTherapist & IsOwnerOfObject
-            return [composed_perm()]
+        perm = check_permissions(self)
+        if perm is not None:
+            return perm
         return super().get_permissions()
 
     def perform_create(self, serializer):
@@ -50,6 +56,12 @@ class QuestionsViewSet(mixins.DestroyModelMixin,
     def get_queryset(self):
         return self.queryset.order_by('-id').distinct()
 
+    def get_permissions(self):
+        perm = check_permissions(self)
+        if perm is not None:
+            return perm
+        return super().get_permissions()
+
 
 class BasicChoiceViewSet(viewsets.ModelViewSet):
     """View for managing Basic Choices APIs"""
@@ -60,3 +72,25 @@ class BasicChoiceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.queryset.order_by('-id').distinct()
+
+    def get_permissions(self):
+        perm = check_permissions(self)
+        if perm is not None:
+            return perm
+        return super().get_permissions()
+
+
+class TagViewSet(mixins.DestroyModelMixin,
+                 mixins.UpdateModelMixin,
+                 mixins.ListModelMixin,
+                 viewsets.GenericViewSet):
+    """Manage tags in the database"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.TagSerializer
+    queryset = Tag.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.filter(
+            user=self.request.user
+        ).order_by('-name').distinct()
