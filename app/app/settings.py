@@ -26,7 +26,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'changeme')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+CORS_ORIGIN_ALLOW_ALL = True
 ALLOWED_HOSTS.extend(
     filter(
         None,
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'user',
     'task',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'app.urls'
