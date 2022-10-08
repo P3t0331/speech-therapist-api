@@ -12,8 +12,8 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ['id', 'text']
-        read_only_fields = ['id']
+        fields = ['id', 'name', 'user']
+        read_only_fields = ['id', 'user']
 
 
 class BasicChoiceSerializer(serializers.ModelSerializer):
@@ -22,8 +22,8 @@ class BasicChoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicChoice
-        fields = ['id', 'text', 'image', 'tags']
-        read_only_fields = ['id']
+        fields = ['id', 'text', 'image', 'tags', 'created_by']
+        read_only_fields = ['id', 'created_by']
         extra_kwargs = {'image': {'required': 'True'}}
 
     def _get_or_create_tags(self, tags, basic_choice):
@@ -77,16 +77,16 @@ class QuestionSerializer(serializers.ModelSerializer):
         return question
 
 
-class TaskSerializer(serializers.ModelSerializer):
+class TaskDetailSerializer(serializers.ModelSerializer):
     """Serializer for Tasks"""
     tags = TagSerializer(many=True, required=False)
-    questions = QuestionSerializer(many=True, required=False, read_only=True)
+    questions = QuestionSerializer(many=True, required=False)
 
     class Meta:
         model = Task
-        fields = ['id', 'name', 'type', 'difficulty', 'created_by',
-                  'questions', 'tags']
-        read_only_fields = ['id', 'created_by', 'questions']
+        fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags',
+                  'questions']
+        read_only_fields = ['id', 'created_by']
 
     def _get_choices(self, question, task):
         choices = list(BasicChoice.objects.exclude(assigned_to=task))
@@ -139,3 +139,10 @@ class TaskSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class TaskSerializer(TaskDetailSerializer):
+    """Serializer for Task detail view"""
+
+    class Meta(TaskDetailSerializer.Meta):
+        fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags']

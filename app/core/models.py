@@ -94,10 +94,22 @@ class BasicChoice(models.Model):
     image = models.ImageField(null=False, upload_to=recipe_image_file_path)
     assigned_to = models.ManyToManyField('Task', blank=True)
     tags = models.ManyToManyField('Tag')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
 
     def __str__(self):
         return self.text
 
 
 class Tag(models.Model):
-    text = models.CharField(max_length=255)
+    """Tag for filtering recipes"""
+    name = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return self.name

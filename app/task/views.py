@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from task.permissions import IsTherapist, IsOwnerOfObject
-from core.models import Task, Question, BasicChoice, Tag
+from core.models import Task, BasicChoice, Tag
 from task import serializers
 
 
@@ -22,10 +22,11 @@ def check_permissions(self):
 
 class TaskViewSet(viewsets.ModelViewSet):
     """View for manage Task APIs"""
-    serializer_class = serializers.TaskSerializer
+    serializer_class = serializers.TaskDetailSerializer
     queryset = Task.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    model = Task
 
     def get_queryset(self):
         """Retrieve Tasks for auth user"""
@@ -38,29 +39,15 @@ class TaskViewSet(viewsets.ModelViewSet):
             return perm
         return super().get_permissions()
 
+    def get_serializer_class(self):
+        """Return the serializer class for request"""
+        if self.action == 'list':
+            return serializers.TaskSerializer
+        return self.serializer_class
+
     def perform_create(self, serializer):
         """Create a new Task"""
         serializer.save(created_by=self.request.user)
-
-
-class QuestionsViewSet(mixins.DestroyModelMixin,
-                       mixins.UpdateModelMixin,
-                       mixins.ListModelMixin,
-                       viewsets.GenericViewSet):
-    """View for managing Question APIs"""
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-    serializer_class = serializers.QuestionSerializer
-    queryset = Question.objects.all()
-
-    def get_queryset(self):
-        return self.queryset.order_by('-id').distinct()
-
-    def get_permissions(self):
-        perm = check_permissions(self)
-        if perm is not None:
-            return perm
-        return super().get_permissions()
 
 
 class BasicChoiceViewSet(viewsets.ModelViewSet):
@@ -78,6 +65,10 @@ class BasicChoiceViewSet(viewsets.ModelViewSet):
         if perm is not None:
             return perm
         return super().get_permissions()
+
+    def perform_create(self, serializer):
+        """Create a new BasicChoice"""
+        serializer.save(created_by=self.request.user)
 
 
 class TagViewSet(mixins.DestroyModelMixin,
