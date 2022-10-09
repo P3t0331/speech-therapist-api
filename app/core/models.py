@@ -124,7 +124,7 @@ class Answer(models.Model):
     data2 = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=True)
     assigned_to_question = models.ForeignKey(
-        'QuestionAnswer',
+        'QuestionConnectImageAnswer',
         related_name="answer",
         on_delete=models.CASCADE,
     )
