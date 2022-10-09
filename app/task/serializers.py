@@ -1,6 +1,7 @@
 """
 Serializers for Task APIs
 """
+from queue import Empty
 import random
 
 from rest_framework import serializers
@@ -80,13 +81,13 @@ class QuestionSerializer(serializers.ModelSerializer):
 class TaskDetailSerializer(serializers.ModelSerializer):
     """Serializer for Tasks"""
     tags = TagSerializer(many=True, required=False)
-    questions = QuestionSerializer(many=True, required=False)
+    questions = QuestionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Task
         fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags',
                   'questions']
-        read_only_fields = ['id', 'created_by']
+        read_only_fields = ['id']
 
     def _get_choices(self, question, task):
         choices = list(BasicChoice.objects.exclude(assigned_to=task))
@@ -104,7 +105,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             )
             task.tags.add(tag_obj)
 
-    def _create_questions(self, task):
+    def _generate_questions(self, task):
         for i in range(10):
             question = Question.objects.create(heading=f'Otazka{i}')
             self._get_choices(question, task)
@@ -118,7 +119,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "There is not enough data to create exercise"
             )
-        self._create_questions(task)
+        self._generate_questions(task)
         self._get_or_create_tags(tags, task)
         return task
 

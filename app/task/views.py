@@ -6,7 +6,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from task.permissions import IsTherapist, IsOwnerOfObject
-from core.models import Task, BasicChoice, Tag
+from core.models import Task, BasicChoice, Tag, TaskResult
 from task import serializers
 
 
@@ -85,3 +85,14 @@ class TagViewSet(mixins.DestroyModelMixin,
         return self.queryset.filter(
             user=self.request.user
         ).order_by('-name').distinct()
+
+
+class TaskResultViewSet(mixins.CreateModelMixin,
+                        mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        mixins.DestroyModelMixin,
+                        viewsets.GenericViewSet):
+    """View for creating task results"""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = TaskResult.objects.all()

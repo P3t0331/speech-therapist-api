@@ -1,6 +1,7 @@
 """
 Database models
 """
+from email.policy import default
 import uuid
 import os
 
@@ -66,15 +67,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
 
-class Question(models.Model):
-    heading = models.CharField(max_length=255, blank=True)
-    choices = models.ManyToManyField('BasicChoice')
-
-    def __str__(self):
-        return self.heading
-
-
 class Task(models.Model):
+    """Model for Tasks"""
     name = models.CharField(max_length=255)
     type = models.IntegerField()
     difficulty = models.CharField(max_length=255)
@@ -83,13 +77,23 @@ class Task(models.Model):
         on_delete=models.CASCADE,
     )
     tags = models.ManyToManyField('Tag')
-    questions = models.ManyToManyField('Question')
 
     def __str__(self):
         return self.name
 
 
+class Question(models.Model):
+    """Model for storing a question"""
+    heading = models.CharField(max_length=255, blank=True)
+    choices = models.ManyToManyField('BasicChoice')
+    assigned_to = models.ForeignKey(Task, related_name="questions", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.heading
+
+
 class BasicChoice(models.Model):
+    """Model for storing choices"""
     text = models.CharField(max_length=255)
     image = models.ImageField(null=False, upload_to=recipe_image_file_path)
     assigned_to = models.ManyToManyField('Task', blank=True)
@@ -104,7 +108,7 @@ class BasicChoice(models.Model):
 
 
 class Tag(models.Model):
-    """Tag for filtering recipes"""
+    """Model for Tags"""
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -113,3 +117,33 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Answer(models.Model):
+    data1 = models.CharField(max_length=255)
+    data2 = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=True)
+    assigned_to_question = models.ForeignKey(
+        'QuestionAnswer',
+        related_name="answer",
+        on_delete=models.CASCADE,
+    )
+
+
+class TaskResult(models.Model):
+    """Model for storing Task results"""
+    answered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+
+
+class QuestionConnectImageAnswer(models.Model):
+    answers = models.ManyToManyField('Answer')
+    assigned_to = models.ForeignKey(
+        TaskResult,
+        related_name="connect_image_answer",
+        on_delete=models.CASCADE,
+    )
+
