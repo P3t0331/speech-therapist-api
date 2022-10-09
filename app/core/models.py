@@ -1,6 +1,7 @@
 """
 Database models
 """
+from email.policy import default
 import uuid
 import os
 
@@ -97,6 +98,7 @@ class BasicChoice(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        default=0,
     )
 
     def __str__(self):
@@ -109,6 +111,7 @@ class Tag(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        default=0,
     )
 
     def __str__(self):
