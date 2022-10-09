@@ -1,7 +1,6 @@
 """
 Database models
 """
-from email.policy import default
 import uuid
 import os
 
@@ -86,7 +85,11 @@ class Question(models.Model):
     """Model for storing a question"""
     heading = models.CharField(max_length=255, blank=True)
     choices = models.ManyToManyField('BasicChoice')
-    assigned_to = models.ForeignKey(Task, related_name="questions", on_delete=models.CASCADE)
+    assigned_to = models.ForeignKey(
+        Task,
+        related_name="questions",
+        on_delete=models.CASCADE,
+    )
 
     def __str__(self):
         return self.heading
@@ -146,4 +149,3 @@ class QuestionConnectImageAnswer(models.Model):
         related_name="connect_image_answer",
         on_delete=models.CASCADE,
     )
-

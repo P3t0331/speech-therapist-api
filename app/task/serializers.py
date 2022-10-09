@@ -1,7 +1,6 @@
 """
 Serializers for Task APIs
 """
-from queue import Empty
 import random
 
 from rest_framework import serializers
@@ -81,13 +80,13 @@ class QuestionSerializer(serializers.ModelSerializer):
 class TaskDetailSerializer(serializers.ModelSerializer):
     """Serializer for Tasks"""
     tags = TagSerializer(many=True, required=False)
-    questions = QuestionSerializer(many=True, read_only=True)
+    questions = QuestionSerializer(many=True, required=False)
 
     class Meta:
         model = Task
         fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags',
                   'questions']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'created_by']
 
     def _get_choices(self, question, task):
         choices = list(BasicChoice.objects.exclude(assigned_to=task))
@@ -107,9 +106,9 @@ class TaskDetailSerializer(serializers.ModelSerializer):
 
     def _generate_questions(self, task):
         for i in range(10):
-            question = Question.objects.create(heading=f'Otazka{i}')
+            question = Question.objects.create(heading=f'Otazka{i}',
+                                               assigned_to=task)
             self._get_choices(question, task)
-            task.questions.add(question)
 
     def create(self, validated_data):
         """Create a task"""
