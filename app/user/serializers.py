@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['email', 'name', 'password', 'confirm_password',
+        fields = ['id', 'email', 'name', 'password', 'confirm_password',
                   'is_therapist', 'assigned_tasks']
         extra_kwargs = {
             'password': {
@@ -29,7 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
                 'style': {'input_type': 'password'}
                 }
             }
-        read_only_fields = ['is_therapist', 'assigned_tasks']
+        read_only_fields = ['id', 'is_therapist', 'assigned_tasks']
 
     def validate(self, data):
         """
