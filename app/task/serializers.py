@@ -4,7 +4,17 @@ Serializers for Task APIs
 import random
 
 from rest_framework import serializers
-from core.models import Task, Question, BasicChoice, Tag
+from core.models import (
+    Task,
+    Question,
+    BasicChoice,
+    Tag,
+    TaskResult,
+    Answer,
+    QuestionConnectImageAnswer,
+    User
+)
+from user.serializers import UserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -132,7 +142,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
 
         if questions is not None:
             instance.questions.clear()
-            self._create_questions(instance)
+            self._generate_questions(instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -146,3 +156,87 @@ class TaskSerializer(TaskDetailSerializer):
 
     class Meta(TaskDetailSerializer.Meta):
         fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags']
+
+
+class RandomTaskSerializer(TaskDetailSerializer):
+    class Meta(TaskDetailSerializer.Meta):
+        read_only_fields = ['id', 'name',
+                            'type', 'difficulty',
+                            'created_by', 'tags', 'questions']
+
+
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = ['id', 'data1', 'data2', 'is_correct']
+        read_only_fields = ['id']
+
+
+class QuestionConnectImageAnswerSerializer(serializers.ModelSerializer):
+    answer = AnswerSerializer(required=True, many=True)
+
+    class Meta:
+        model = QuestionConnectImageAnswer
+        fields = ['id', 'answer']
+        read_only_fields = ['id']
+
+    def _create_answer(self, answers, answer):
+        for answer_data in answers:
+            Answer.objects.create(assigned_to_question=answer, **answer_data)
+
+    def create(self, validated_data):
+        answers = validated_data.pop('answer', [])
+        answer = QuestionConnectImageAnswer.objects.create(**validated_data)
+        self._create_answer(answers, answer)
+
+
+class TaskDetailResultSerializer(serializers.ModelSerializer):
+    """Serializer for task results"""
+    answers = QuestionConnectImageAnswerSerializer(required=True, many=True)
+
+    class Meta:
+        model = TaskResult
+        fields = ['id', 'answered_by', 'task', 'answers']
+        read_only_fields = ['id', 'answered_by']
+
+    def create(self, validated_data):
+        """Create a result"""
+        answers = validated_data.pop('answers', [])
+        result = TaskResult.objects.create(**validated_data)
+
+        for answers_data in answers:
+            answer = answers_data.pop('answer', [])
+            question = QuestionConnectImageAnswer.objects.create(
+                assigned_to=result,
+                **answers_data
+            )
+            for answer_data in answer:
+                Answer.objects.create(assigned_to_question=question,
+                                      **answer_data)
+        return result
+
+
+class TaskResultSerializer(TaskDetailResultSerializer):
+    class Meta(TaskDetailResultSerializer.Meta):
+        fields = ['id', 'answered_by', 'task']
+
+
+class AssignTaskSerializer(serializers.ModelSerializer):
+    users = serializers.SlugRelatedField(many=True, slug_field='email',
+                                         queryset=User.objects.all(),
+                                         write_only=True)
+    user_set = UserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Task
+        fields = ['user_set', 'users']
+
+    def update(self, instance, validated_data):
+        users = validated_data.pop('users', None)
+        instance = super().update(instance, validated_data)
+
+        if users:
+            for user in users:
+                instance.user_set.add(user)
+            instance.save()
+        return instance

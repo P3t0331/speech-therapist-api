@@ -60,6 +60,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_therapist = models.BooleanField(default=False)
+    assigned_tasks = models.ManyToManyField('Task')
 
     objects = UserManager()
 
@@ -74,6 +75,7 @@ class Task(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        related_name='created_by'
     )
     tags = models.ManyToManyField('Tag')
 
@@ -122,17 +124,6 @@ class Tag(models.Model):
         return self.name
 
 
-class Answer(models.Model):
-    data1 = models.CharField(max_length=255)
-    data2 = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=True)
-    assigned_to_question = models.ForeignKey(
-        'QuestionConnectImageAnswer',
-        related_name="answer",
-        on_delete=models.CASCADE,
-    )
-
-
 class TaskResult(models.Model):
     """Model for storing Task results"""
     answered_by = models.ForeignKey(
@@ -141,11 +132,30 @@ class TaskResult(models.Model):
     )
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return "Result task" + str(self.task.id)
+
 
 class QuestionConnectImageAnswer(models.Model):
-    answers = models.ManyToManyField('Answer')
     assigned_to = models.ForeignKey(
         TaskResult,
-        related_name="connect_image_answer",
+        related_name="answers",
         on_delete=models.CASCADE,
     )
+
+    def __str__(self):
+        return "Result question for " + str(self.assigned_to)
+
+
+class Answer(models.Model):
+    data1 = models.CharField(max_length=255)
+    data2 = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=True)
+    assigned_to_question = models.ForeignKey(
+        QuestionConnectImageAnswer,
+        related_name="answer",
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return "Result answers for " + str(self.assigned_to_question)

@@ -14,7 +14,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = ['email', 'name', 'is_therapist']
     list_filter = ('is_active', 'is_superuser', 'is_therapist')
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'name')}),
+        (None, {'fields': ('email', 'password', 'name', 'assigned_tasks')}),
         (
             _('Permissions'),
             {
@@ -53,3 +53,5 @@ admin.site.register(models.Question)
 admin.site.register(models.BasicChoice)
 admin.site.register(models.Tag)
 admin.site.register(models.TaskResult)
+admin.site.register(models.QuestionConnectImageAnswer)
+admin.site.register(models.Answer)

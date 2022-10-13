@@ -1,7 +1,9 @@
 """
 Views for the Task API
 """
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
@@ -43,11 +45,34 @@ class TaskViewSet(viewsets.ModelViewSet):
         """Return the serializer class for request"""
         if self.action == 'list':
             return serializers.TaskSerializer
+        elif self.action == 'assign_task':
+            return serializers.AssignTaskSerializer
+        elif self.action == 'get_random_task':
+            return serializers.RandomTaskSerializer
         return self.serializer_class
 
     def perform_create(self, serializer):
         """Create a new Task"""
         serializer.save(created_by=self.request.user)
+
+    @action(methods=['PATCH'], detail=True, url_path='assign_task')
+    def assign_task(self, request, pk=None):
+        task = self.get_object()
+        serializer = self.get_serializer(task, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=False, url_path='get_random_task')
+    def get_random_task(self, request, pk=None):
+        task = Task.objects.filter(created_by=1).order_by('?').first()
+        serializer = self.get_serializer(task, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class BasicChoiceViewSet(viewsets.ModelViewSet):
@@ -96,3 +121,17 @@ class TaskResultViewSet(mixins.CreateModelMixin,
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = TaskResult.objects.all()
+    serializer_class = serializers.TaskDetailResultSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        return queryset.order_by('-id').distinct()
+
+    def perform_create(self, serializer):
+        serializer.save(answered_by=self.request.user)
+
+    def get_serializer_class(self):
+        """Return the serializer class for request"""
+        if self.action == 'list':
+            return serializers.TaskResultSerializer
+        return self.serializer_class
