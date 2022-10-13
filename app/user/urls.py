@@ -15,4 +15,5 @@ urlpatterns = [
     path('login/', views.CreateTokenView.as_view(), name='token'),
     path('myprofile/', views.ManagerUserView.as_view(), name='me'),
     path('list/', views.ListUserView.as_view(), name='list-users'),
+    path('list/<pk>', views.GetUser.as_view(), name='get-user'),
 ]

@@ -79,3 +79,9 @@ class ListUserView(generics.ListAPIView):
         elif patient_only:
             queryset = queryset.filter(is_therapist=False)
         return queryset
+
+class GetUser(generics.RetrieveAPIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
