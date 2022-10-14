@@ -14,12 +14,20 @@ from django.contrib.auth.models import (
 )
 
 
-def recipe_image_file_path(instance, filename):
+def choices_image_file_path(instance, filename):
     """Generate filepath for new recipe image"""
     ext = os.path.splitext(filename)[1]
     filename = f'{uuid.uuid4()}{ext}'
 
-    return os.path.join('uploads', 'recipe', filename)
+    return os.path.join('uploads', 'choices', filename)
+
+
+def profile_image_file_path(instance, filename):
+    """Generate filepath for new recipe image"""
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+
+    return os.path.join('uploads', 'profile', filename)
 
 
 class UserManager(BaseUserManager):
@@ -62,9 +70,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_therapist = models.BooleanField(default=False)
     assigned_tasks = models.ManyToManyField('Task')
 
+    image = models.ImageField(null=True, upload_to=profile_image_file_path)
+    phone = models.CharField(max_length=20, null=True)
+    location = models.CharField(max_length=255, null=True)
+    country = models.CharField(max_length=255, null=True)
+    company = models.CharField(max_length=255, null=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+    def __str__(self):
+        return self.email
 
 
 class Task(models.Model):
@@ -100,7 +117,7 @@ class Question(models.Model):
 class BasicChoice(models.Model):
     """Model for storing choices"""
     text = models.CharField(max_length=255)
-    image = models.ImageField(null=False, upload_to=recipe_image_file_path)
+    image = models.ImageField(null=False, upload_to=choices_image_file_path)
     assigned_to = models.ManyToManyField('Task', blank=True)
     tags = models.ManyToManyField('Tag')
     created_by = models.ForeignKey(

@@ -14,7 +14,9 @@ class UserAdmin(BaseUserAdmin):
     list_display = ['email', 'name', 'is_therapist']
     list_filter = ('is_active', 'is_superuser', 'is_therapist')
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'name', 'assigned_tasks')}),
+        (None, {'fields': ('email', 'password', 'name', 'assigned_tasks',
+                           'image', 'phone', 'location', 'country',
+                           'company')}),
         (
             _('Permissions'),
             {

@@ -8,6 +8,7 @@ from rest_framework.settings import api_settings
 from user.serializers import UserSerializer, UserTherapistSerializer
 from user.serializers import AuthTokenSerializer
 from core.models import User
+from core.permissions import IsTherapist
 
 from drf_spectacular.utils import (
     extend_schema_view,
@@ -38,6 +39,17 @@ class ManagerUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """Retrieve and return the authenticated user"""
+        return self.request.user
+
+
+class ManagerUserTherapistView(generics.RetrieveUpdateAPIView):
+    """Manage authenticated user"""
+    serializer_class = UserTherapistSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated, IsTherapist]
 
     def get_object(self):
         """Retrieve and return the authenticated user"""
@@ -79,6 +91,7 @@ class ListUserView(generics.ListAPIView):
         elif patient_only:
             queryset = queryset.filter(is_therapist=False)
         return queryset
+
 
 class GetUser(generics.RetrieveAPIView):
     authentication_classes = [authentication.TokenAuthentication]

@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from task.permissions import IsTherapist, IsOwnerOfObject
+from core.permissions import IsTherapist, IsOwnerOfObject
 from core.models import Task, BasicChoice, Tag, TaskResult
 from task import serializers
 
@@ -55,7 +55,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         """Create a new Task"""
         serializer.save(created_by=self.request.user)
 
-    @action(methods=['PATCH'], detail=True, url_path='assign_task')
+    @action(methods=['PATCH'], detail=True, url_path='assign_task',
+            permission_classes=[IsAuthenticated, IsTherapist])
     def assign_task(self, request, pk=None):
         task = self.get_object()
         serializer = self.get_serializer(task, data=request.data)
@@ -111,6 +112,12 @@ class TagViewSet(mixins.DestroyModelMixin,
             user=self.request.user
         ).order_by('-name').distinct()
 
+    def get_permissions(self):
+        perm = check_permissions(self)
+        if perm is not None:
+            return perm
+        return super().get_permissions()
+
 
 class TaskResultViewSet(mixins.CreateModelMixin,
                         mixins.ListModelMixin,
@@ -122,6 +129,12 @@ class TaskResultViewSet(mixins.CreateModelMixin,
     permission_classes = [IsAuthenticated]
     queryset = TaskResult.objects.all()
     serializer_class = serializers.TaskDetailResultSerializer
+
+    def get_permissions(self):
+        if self.action == 'destroy':
+            composed_perm = IsAuthenticated & IsTherapist
+            return [composed_perm()]
+        return super().get_permissions()
 
     def get_queryset(self):
         queryset = self.queryset

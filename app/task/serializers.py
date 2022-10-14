@@ -160,9 +160,9 @@ class TaskSerializer(TaskDetailSerializer):
 
 class RandomTaskSerializer(TaskDetailSerializer):
     class Meta(TaskDetailSerializer.Meta):
-        read_only_fields = ['id', 'name',
-                            'type', 'difficulty',
-                            'created_by', 'tags', 'questions']
+        fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags']
+        read_only_fields = ['id', 'name', 'type', 'difficulty',
+                            'created_by', 'tags']
 
 
 class AnswerSerializer(serializers.ModelSerializer):

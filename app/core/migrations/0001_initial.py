@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('text', models.CharField(max_length=255)),
-                ('image', models.ImageField(upload_to=core.models.recipe_image_file_path)),
+                ('image', models.ImageField(upload_to=core.models.choices_image_file_path)),
             ],
         ),
         migrations.CreateModel(

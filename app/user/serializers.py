@@ -7,10 +7,20 @@ from django.contrib.auth import (
     )
 from django.utils.translation import gettext as _
 from rest_framework import serializers
+from core.models import Task
+
+
+class TaskSerializerForUser(serializers.ModelSerializer):
+    """Serializer for Tasks"""
+    class Meta:
+        model = Task
+        fields = ['id', 'name', 'type', 'difficulty']
+        read_only_fields = ['id', 'created_by']
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for the user object"""
+    assigned_tasks = TaskSerializerForUser(many=True, required=False)
     confirm_password = serializers.CharField(
         allow_blank=False,
         write_only=True,
@@ -56,6 +66,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserTherapistSerializer(UserSerializer):
     """Serializer for the therapist user object"""
+    class Meta(UserSerializer.Meta):
+        fields = ['id', 'email', 'name', 'password', 'confirm_password',
+                  'is_therapist', 'image',
+                  'phone', 'location', 'country', 'company']
+
     def create(self, validated_data):
         """Create and return a user with encrypted password"""
         return get_user_model().objects.create_therapist_user(**validated_data)
