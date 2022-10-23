@@ -16,7 +16,8 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password', 'name', 'assigned_tasks',
                            'image', 'phone', 'location', 'country',
-                           'company')}),
+                           'company', 'therapist_code', 'assigned_to',
+                           'notes')}),
         (
             _('Permissions'),
             {
@@ -25,6 +26,7 @@ class UserAdmin(BaseUserAdmin):
                     'is_staff',
                     'is_superuser',
                     'is_therapist',
+                    'assigment_active',
                 )
             }
         ),
@@ -57,3 +59,4 @@ admin.site.register(models.Tag)
 admin.site.register(models.TaskResult)
 admin.site.register(models.QuestionConnectImageAnswer)
 admin.site.register(models.Answer)
+admin.site.register(models.Meeting)

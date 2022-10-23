@@ -68,13 +68,28 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_therapist = models.BooleanField(default=False)
-    assigned_tasks = models.ManyToManyField('Task')
+    assigned_tasks = models.ManyToManyField('Task', blank=True)
 
-    image = models.ImageField(null=True, upload_to=profile_image_file_path)
-    phone = models.CharField(max_length=20, null=True)
-    location = models.CharField(max_length=255, null=True)
-    country = models.CharField(max_length=255, null=True)
-    company = models.CharField(max_length=255, null=True)
+    image = models.ImageField(
+        null=True,
+        upload_to=profile_image_file_path,
+        blank=True
+    )
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
+    country = models.CharField(max_length=255, null=True, blank=True)
+    company = models.CharField(max_length=255, null=True, blank=True)
+    therapist_code = models.CharField(max_length=5, null=True, blank=True)
+
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='therapists',
+        null=True,
+        blank=True
+    )
+    assigment_active = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
 
     objects = UserManager()
 
@@ -176,3 +191,24 @@ class Answer(models.Model):
 
     def __str__(self):
         return "Result answers for " + str(self.assigned_to_question)
+
+
+class Meeting(models.Model):
+    name = models.CharField(max_length=255)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="meeting_created_by"
+    )
+    assigned_patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="meeting_assigned_patient",
+        blank=True,
+        null=True,
+    )
+    start_time = models.DateTimeField(auto_now=False, auto_now_add=False)
+    end_time = models.DateTimeField(auto_now=False, auto_now_add=False)
+
+    def __str__(self):
+        return self.name
