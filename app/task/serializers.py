@@ -12,7 +12,9 @@ from core.models import (
     TaskResult,
     Answer,
     QuestionConnectImageAnswer,
-    User
+    User,
+    CustomChoice,
+    CustomQuestion,
 )
 from user.serializers import UserSerializer
 
@@ -66,6 +68,12 @@ class BasicChoiceSerializer(serializers.ModelSerializer):
         return instance
 
 
+class CustomChoiceSerializer(BasicChoiceSerializer):
+
+    class Meta(BasicChoiceSerializer.Meta):
+        model = CustomChoice
+
+
 class QuestionSerializer(serializers.ModelSerializer):
     """Serializer for Questions"""
     choices = BasicChoiceSerializer(many=True, required=False)
@@ -87,6 +95,29 @@ class QuestionSerializer(serializers.ModelSerializer):
         return question
 
 
+class CustomQuestionSerializer(QuestionSerializer):
+
+    choices = CustomChoiceSerializer(many=True, required=True)
+
+    class Meta(QuestionSerializer.Meta):
+        model = CustomQuestion
+        fields = ['id', 'choices']
+    def _get_or_create_choices(self, question, choices):
+        auth_user = self.context['request'].user
+        for choice in choices:
+            choice_obj, created = CustomChoice.objects.get_or_create(
+                created_by=auth_user,
+                **choice,
+            )
+            question.choices.add(choice_obj)
+
+    def create(self, validated_data):
+        choices = validated_data.pop('choices', [])
+        question = Question.objects.create(**validated_data)
+        self._get_or_create_choices(question, choices)
+        return question
+
+
 class TaskDetailSerializer(serializers.ModelSerializer):
     """Serializer for Tasks"""
     tags = TagSerializer(many=True, required=False)
@@ -99,7 +130,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_by']
 
     def _get_choices(self, question, task):
-        choices = list(BasicChoice.objects.exclude(assigned_to=task))
+        choices = list(BasicChoice.objects.exclude(assigned_to=task).filter(created_by=1))
         random_choices = random.sample(choices, 3)
         for choice in random_choices:
             choice.assigned_to.add(task)
@@ -143,6 +174,64 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         if questions is not None:
             instance.questions.clear()
             self._generate_questions(instance)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
+
+class CustomTaskDetailSerializer(TaskDetailSerializer):
+    custom_questions = CustomQuestionSerializer(many=True, required=True)
+
+    class Meta:
+        model = Task
+        fields = ['id', 'name', 'type', 'difficulty', 'created_by', 'tags',
+                  'custom_questions']
+        read_only_fields = ['id', 'created_by']
+
+    def _get_or_create_questions(self, task, questions):
+        auth_user = self.context['request'].user
+        for question in questions:
+            choices = question.pop('choices', [])
+            question_obj, created = CustomQuestion.objects.get_or_create(
+                assigned_to=task
+            )
+            for choice in choices:
+                tags = choice.pop('tags', [])
+                choice_obj, created = CustomChoice.objects.get_or_create(
+                    created_by=auth_user,
+                    **choice,
+                )
+                for tag in tags:
+                    tag_obj, created = Tag.objects.get_or_create(
+                        user=auth_user,
+                        **tag,
+                    )
+                    choice_obj.tags.add(tag_obj)
+                question_obj.choices.add(choice_obj)
+
+    def create(self, validated_data):
+        """Create a custom task"""
+        questions = validated_data.pop('custom_questions', [])
+        tags = validated_data.pop('tags', [])
+        task = Task.objects.create(**validated_data)
+        self._get_or_create_questions(task, questions)
+        self._get_or_create_tags(tags, task)
+        return task
+
+    def update(self, instance, validated_data):
+        """Update task"""
+        tags = validated_data.pop('tags', None)
+        questions = validated_data.pop('custom_questions', None)
+        if tags is not None:
+            instance.tags.clear()
+            self._get_or_create_tags(tags, instance)
+
+        if questions is not None:
+            instance.questions.clear()
+            self._get_or_create_questions(instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -201,6 +290,16 @@ class TaskDetailResultSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create a result"""
+        if (TaskResult.objects.filter(
+                answered_by=self.context['request'].user,
+                task=validated_data.get('task')
+            ) is not None
+        ):
+            TaskResult.objects.filter(
+                answered_by=self.context['request'].user,
+                task=validated_data.get('task')
+            ).delete()
+
         answers = validated_data.pop('answers', [])
         result = TaskResult.objects.create(**validated_data)
 

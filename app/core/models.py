@@ -110,6 +110,7 @@ class Task(models.Model):
         related_name='created_by'
     )
     tags = models.ManyToManyField('Tag')
+    is_custom = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -129,10 +130,34 @@ class Question(models.Model):
         return self.heading
 
 
+class CustomQuestion(models.Model):
+    """Model for storing a question"""
+    choices = models.ManyToManyField('CustomChoice')
+    assigned_to = models.ForeignKey(
+        Task,
+        related_name="custom_questions",
+        on_delete=models.CASCADE,
+    )
+
+
 class BasicChoice(models.Model):
     """Model for storing choices"""
     text = models.CharField(max_length=255)
     image = models.ImageField(null=False, upload_to=choices_image_file_path)
+    assigned_to = models.ManyToManyField('Task', blank=True)
+    tags = models.ManyToManyField('Tag')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return self.text
+
+
+class CustomChoice(models.Model):
+    text = models.CharField(max_length=255)
+    image = models.CharField(max_length=255)
     assigned_to = models.ManyToManyField('Task', blank=True)
     tags = models.ManyToManyField('Tag')
     created_by = models.ForeignKey(
