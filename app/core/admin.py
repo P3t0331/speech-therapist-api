@@ -26,7 +26,7 @@ class UserAdmin(BaseUserAdmin):
                     'is_staff',
                     'is_superuser',
                     'is_therapist',
-                    'assigment_active',
+                    'assignment_active',
                 )
             }
         ),
