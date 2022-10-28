@@ -33,6 +33,10 @@ urlpatterns = [
          views.AcceptLinkView.as_view(), name='accept-link'),
     path('therapist/link/<pk>/reject/',
          views.RejectLinkView.as_view(), name='reject-link'),
-    path('therapist/link/<pk>/note/',
+    path('therapist/<pk>/note/',
          views.UpdateNoteView.as_view(), name='update-note'),
+    path('therapist/link/<pk>/unlink/',
+         views.TherapistUnlinkView.as_view(), name='therapist-unlink-patient'),
+    path('patient/unlink/',
+         views.PatientUnlinkView.as_view(), name='unlink-patient'),
 ]

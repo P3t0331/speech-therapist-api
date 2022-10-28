@@ -41,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ['id', 'email', 'name', 'password', 'confirm_password',
                   'image', 'is_therapist', 'assigned_tasks',
-                  'assigned_to', 'assigment_active']
+                  'assigned_to', 'assignment_active']
         extra_kwargs = {
             'password': {
                 'write_only': True,
@@ -51,7 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
             }
         read_only_fields = ['id', 'is_therapist',
                             'assigned_tasks', 'assigned_to',
-                            'assigment_active']
+                            'assignment_active']
 
     def validate(self, data):
         """
@@ -87,8 +87,8 @@ class UserTherapistSerializer(UserSerializer):
     class Meta(UserSerializer.Meta):
         fields = ['id', 'email', 'name', 'password', 'confirm_password',
                   'is_therapist', 'image',
-                  'phone', 'location', 'country', 'company',
-                  'therapist_code']
+                  'phone', 'location', 'country', 'company', 'bio',
+                  'therapist_code', 'assigned_patients_count']
         extra_kwargs = {
             'therapist_code': {
                 'read_only': True
@@ -162,8 +162,9 @@ class AssignTherapistSerializer(serializers.ModelSerializer):
         user_id = self.context['request'].user.id
         get_user_model().objects.filter(
             id=user_id
-        ).update(assigned_to=therapist)
+        ).update(assigned_to=therapist, assignment_active=False)
         instance.assigned_to = therapist
+        instance.assignment_active = False
         return instance
 
 
@@ -172,10 +173,10 @@ class WaitingToLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'email', 'name', 'image',
-                  'assigned_to', 'assigment_active']
+                  'assigned_to', 'assignment_active']
         read_only_fields = ['id', 'email', 'name',
                             'image', 'assigned_to',
-                            'assigment_active']
+                            'assignment_active']
 
 
 class UpdateNoteSerializer(serializers.ModelSerializer):

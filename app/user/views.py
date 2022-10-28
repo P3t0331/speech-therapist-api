@@ -88,7 +88,7 @@ class ListPatientUserView(generics.ListAPIView):
         if linked_only:
             queryset = queryset.filter(
                 assigned_to=self.request.user,
-                assigment_active=True
+                assignment_active=True
             )
         return queryset
 
@@ -141,7 +141,7 @@ class PatientsWaitingToLinkView(generics.ListAPIView):
     def get_queryset(self):
         queryset = User.objects.all().exclude(
             assigned_to__isnull=True
-        ).filter(assigment_active=False)
+        ).filter(assignment_active=False)
         queryset.filter(
             assigned_to=self.request.user
         ).order_by('-id').distinct()
@@ -163,7 +163,7 @@ class AcceptLinkView(GenericLinkView):
     """API for accepting link to therapists"""
     def update(self, request, *args, **kwargs):
         request_id = int(self.kwargs['pk'])
-        User.objects.filter(id=request_id).update(assigment_active=True)
+        User.objects.filter(id=request_id).update(assignment_active=True)
         return super().update(request, *args, **kwargs)
 
 
@@ -174,7 +174,7 @@ class RejectLinkView(GenericLinkView):
         request_id = int(self.kwargs['pk'])
         User.objects.filter(id=request_id).update(
             assigned_to='',
-            assigment_active=False
+            assignment_active=False
         )
         return super().update(request, *args, **kwargs)
 
@@ -186,3 +186,34 @@ class UpdateNoteView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UpdateNoteSerializer
+
+
+class TherapistUnlinkView(GenericLinkView):
+
+    def update(self, request, *args, **kwargs):
+        request_id = int(self.kwargs['pk'])
+        User.objects.filter(id=request_id).update(
+            assigned_to='',
+            assignment_active=False
+        )
+        return super().update(request, *args, **kwargs)
+
+class PatientUnlinkView(generics.UpdateAPIView):
+    """Generic view for links"""
+    http_method_names = ['patch']
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    queryset = User.objects.all()
+    serializer_class = WaitingToLinkSerializer
+
+    def get_object(self):
+        """Retrieve and return the authenticated user"""
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        User.objects.filter(id=self.get_object().id).update(
+            assigned_to='',
+            assignment_active=False
+        )
+        return super().update(request, *args, **kwargs)

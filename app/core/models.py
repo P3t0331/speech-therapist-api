@@ -15,7 +15,7 @@ from django.contrib.auth.models import (
 
 
 def choices_image_file_path(instance, filename):
-    """Generate filepath for new recipe image"""
+    """Generate filepath for new choice image"""
     ext = os.path.splitext(filename)[1]
     filename = f'{uuid.uuid4()}{ext}'
 
@@ -23,7 +23,7 @@ def choices_image_file_path(instance, filename):
 
 
 def profile_image_file_path(instance, filename):
-    """Generate filepath for new recipe image"""
+    """Generate filepath for new profile image"""
     ext = os.path.splitext(filename)[1]
     filename = f'{uuid.uuid4()}{ext}'
 
@@ -80,16 +80,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     country = models.CharField(max_length=255, null=True, blank=True)
     company = models.CharField(max_length=255, null=True, blank=True)
     therapist_code = models.CharField(max_length=5, null=True, blank=True)
+    bio = models.TextField(blank=True)
 
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='therapists',
+        related_name='patients',
         null=True,
         blank=True
     )
-    assigment_active = models.BooleanField(default=False)
+    assignment_active = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
+
+    @property
+    def assigned_patients_count(self):
+        return self.patients.count()
 
     objects = UserManager()
 
@@ -156,6 +161,7 @@ class BasicChoice(models.Model):
 
 
 class CustomChoice(models.Model):
+    """Model for storing custom choices created by therapist"""
     text = models.CharField(max_length=255)
     image = models.CharField(max_length=255)
     assigned_to = models.ManyToManyField('Task', blank=True)
@@ -194,6 +200,7 @@ class TaskResult(models.Model):
 
 
 class QuestionConnectImageAnswer(models.Model):
+    """Model for storing question answers"""
     assigned_to = models.ForeignKey(
         TaskResult,
         related_name="answers",
@@ -205,6 +212,7 @@ class QuestionConnectImageAnswer(models.Model):
 
 
 class Answer(models.Model):
+    """Model for storing answers"""
     data1 = models.CharField(max_length=255)
     data2 = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=True)
@@ -219,6 +227,7 @@ class Answer(models.Model):
 
 
 class Meeting(models.Model):
+    """Model for storing meetings created by therapist"""
     name = models.CharField(max_length=255)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

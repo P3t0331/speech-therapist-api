@@ -20,7 +20,7 @@ class MeetingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retrieve Meetings for auth user"""
         return self.queryset.filter(
-            user=self.request.user
+            created_by=self.request.user
         ).order_by('-name').distinct()
 
     def perform_create(self, serializer):

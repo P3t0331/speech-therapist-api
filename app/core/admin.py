@@ -17,7 +17,7 @@ class UserAdmin(BaseUserAdmin):
         (None, {'fields': ('email', 'password', 'name', 'assigned_tasks',
                            'image', 'phone', 'location', 'country',
                            'company', 'therapist_code', 'assigned_to',
-                           'notes')}),
+                           'notes', 'bio')}),
         (
             _('Permissions'),
             {
@@ -30,7 +30,7 @@ class UserAdmin(BaseUserAdmin):
                 )
             }
         ),
-        (_('Important dates'), {'fields': ('last_login',)}),
+        (_('Important data'), {'fields': ('last_login',)}),
     )
     readonly_fields = ['last_login']
 

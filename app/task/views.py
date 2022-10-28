@@ -1,6 +1,12 @@
 """
 Views for the Task API
 """
+from drf_spectacular.utils import (
+    extend_schema_view,
+    extend_schema,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,6 +17,8 @@ from core.permissions import IsTherapist, IsOwnerOfObject
 from core.models import Task, BasicChoice, Tag, TaskResult
 from task import serializers
 
+def str_to_bool(s):
+    return s == 'true'
 
 def check_permissions(self):
     if self.action == 'create':
@@ -22,6 +30,27 @@ def check_permissions(self):
         return [composed_perm()]
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'default',
+                OpenApiTypes.BOOL, enum=[True, False],
+                description="Filter to show only default tasks"
+            ),
+            OpenApiParameter(
+                'custom',
+                OpenApiTypes.BOOL, enum=[True, False],
+                description="Filter to show only custom tasks"
+            ),
+            OpenApiParameter(
+                'generated',
+                OpenApiTypes.BOOL, enum=[True, False],
+                description="Filter to show only generated tasks"
+            )
+        ]
+    )
+)
 class TaskViewSet(viewsets.ModelViewSet):
     """View for manage Task APIs"""
     serializer_class = serializers.TaskDetailSerializer
@@ -32,7 +61,27 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retrieve Tasks for auth user"""
-        queryset = self.queryset
+        queryset = self.queryset.none()
+        queryset1 = self.queryset
+        queryset2 = self.queryset
+        queryset3 = self.queryset
+        default_param = str_to_bool(self.request.query_params.get('default', False))
+        custom_param = str_to_bool(self.request.query_params.get('custom', False))
+        generated_param = str_to_bool(self.request.query_params.get('generated', False))
+        if default_param:
+            queryset1 = self.queryset.filter(created_by=1)
+            queryset = queryset | queryset1
+
+        if custom_param:
+            queryset2 = self.queryset.filter(is_custom=1)
+            queryset = queryset | queryset2
+
+        if generated_param:
+            queryset3 = self.queryset.exclude(created_by=1).filter(is_custom=0)
+            queryset = queryset | queryset3
+        
+        if (not default_param and not custom_param and not generated_param):
+            return self.queryset.order_by('-id').distinct()
         return queryset.order_by('-id').distinct()
 
     def get_permissions(self):
@@ -78,7 +127,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class CustomTaskViewSet(viewsets.ModelViewSet):
     """View for manage Task APIs"""
     serializer_class = serializers.CustomTaskDetailSerializer
@@ -91,7 +139,7 @@ class CustomTaskViewSet(viewsets.ModelViewSet):
         """Retrieve Tasks for auth user"""
         queryset = self.queryset
         return queryset.filter(
-            is_custom=True
+            is_custom=True,
         ).order_by('-id').distinct()
 
     def get_permissions(self):
