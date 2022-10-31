@@ -147,8 +147,8 @@ class CustomQuestion(models.Model):
 
 class BasicChoice(models.Model):
     """Model for storing choices"""
-    text = models.CharField(max_length=255)
-    image = models.ImageField(null=False, upload_to=choices_image_file_path)
+    data1 = models.CharField(max_length=255)
+    data2 = models.ImageField(null=False, upload_to=choices_image_file_path)
     assigned_to = models.ManyToManyField('Task', blank=True)
     tags = models.ManyToManyField('Tag')
     created_by = models.ForeignKey(
@@ -162,8 +162,8 @@ class BasicChoice(models.Model):
 
 class CustomChoice(models.Model):
     """Model for storing custom choices created by therapist"""
-    text = models.CharField(max_length=255)
-    image = models.CharField(max_length=255)
+    data1 = models.CharField(max_length=255)
+    data2 = models.CharField(max_length=255)
     assigned_to = models.ManyToManyField('Task', blank=True)
     tags = models.ManyToManyField('Tag')
     created_by = models.ForeignKey(

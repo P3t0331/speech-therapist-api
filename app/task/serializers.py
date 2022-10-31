@@ -34,7 +34,7 @@ class BasicChoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicChoice
-        fields = ['id', 'text', 'image', 'tags', 'created_by']
+        fields = ['id', 'data1', 'data2', 'tags', 'created_by']
         read_only_fields = ['id', 'created_by']
         extra_kwargs = {'image': {'required': 'True'}}
 
