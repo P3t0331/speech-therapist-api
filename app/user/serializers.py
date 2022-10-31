@@ -28,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
     assigned_to = serializers.SlugRelatedField(
         many=False,
         read_only=True,
-        slug_field='email'
+        slug_field='id'
     )
     confirm_password = serializers.CharField(
         allow_blank=False,
