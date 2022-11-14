@@ -106,9 +106,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Task(models.Model):
     """Model for Tasks"""
+    class Difficulty(models.TextChoices):
+        EASY = 'Easy',
+        HARD = 'Hard'
+
+    class Type(models.TextChoices):
+        four_choices_image = 'Four Choices (Image-Texts)',
+        four_choices_text = 'Four Choices (Text-Image)',
+        connect_pairs_text_image = 'Connect Pairs (Text-Image)',
+        connect_pairs_text_text = 'Connect Pairs (Text-Text)',
+
     name = models.CharField(max_length=255)
-    type = models.IntegerField()
-    difficulty = models.CharField(max_length=255)
+
+    type = models.CharField(
+        max_length=50,
+        choices=Type.choices,
+    )
+    difficulty = models.CharField(
+        max_length=20,
+        choices=Difficulty.choices, 
+    )
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -144,6 +162,15 @@ class CustomQuestion(models.Model):
         on_delete=models.CASCADE,
     )
 
+class FourQuestion(models.Model):
+    """Model for storing a question"""
+    choices = models.ManyToManyField('FourChoice')
+    assigned_to = models.ForeignKey(
+        Task,
+        related_name="fourchoice_questions",
+        on_delete=models.CASCADE,
+    )
+
 
 class BasicChoice(models.Model):
     """Model for storing choices"""
@@ -157,14 +184,19 @@ class BasicChoice(models.Model):
     )
 
     def __str__(self):
-        return self.text
+        return self.data1
 
 
 class CustomChoice(models.Model):
     """Model for storing custom choices created by therapist"""
     data1 = models.CharField(max_length=255)
     data2 = models.CharField(max_length=255)
-    assigned_to = models.ManyToManyField('Task', blank=True)
+    assigned_to = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     tags = models.ManyToManyField('Tag')
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -172,7 +204,22 @@ class CustomChoice(models.Model):
     )
 
     def __str__(self):
-        return self.text
+        return self.data1
+
+
+class FourChoice(models.Model):
+    """Model for storing 4 choices task"""
+    data1 = models.CharField(max_length=255)
+    data2 = models.CharField(max_length=255)
+    data3 = models.CharField(max_length=255)
+    data4 = models.CharField(max_length=255)
+    data5 = models.CharField(max_length=255)
+    assigned_to = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
 
 
 class Tag(models.Model):

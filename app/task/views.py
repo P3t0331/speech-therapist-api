@@ -49,6 +49,26 @@ def check_permissions(self):
                 description="Filter to show only generated tasks"
             )
         ]
+    ),
+    retrieve=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'task_type',
+                OpenApiTypes.STR, enum=['basictask', 'customtask',
+                                        'fourchoicestask'],
+                description="Get questions based on this task type"
+            )
+        ]
+    ),
+    create=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'task_type',
+                OpenApiTypes.STR, enum=['basictask', 'customtask',
+                                        'fourchoicestask'],
+                description="POST questions based on this task type"
+            )
+        ]
     )
 )
 class TaskViewSet(viewsets.ModelViewSet):
@@ -92,19 +112,25 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         """Return the serializer class for request"""
+        task_param = self.request.query_params.get('task_type', 'invalid')
         if self.action == 'list':
             return serializers.TaskSerializer
         elif self.action == 'assign_task':
             return serializers.AssignTaskSerializer
         elif self.action == 'get_random_task':
             return serializers.RandomTaskSerializer
-        elif self.action == 'custom_task':
+        elif task_param == 'customtask':
             return serializers.CustomTaskDetailSerializer
+        elif task_param == 'fourchoicestask':
+            return serializers.FourChoicesTaskDetailSerializer
         return self.serializer_class
 
     def perform_create(self, serializer):
         """Create a new Task"""
-        serializer.save(created_by=self.request.user)
+        if self.get_serializer_class() == serializers.CustomTaskDetailSerializer:
+            serializer.save(created_by=self.request.user, is_custom=True)
+        else:
+            serializer.save(created_by=self.request.user)
 
     @action(methods=['PATCH'], detail=True, url_path='assign_task',
             permission_classes=[IsAuthenticated, IsTherapist])
@@ -125,32 +151,6 @@ class TaskViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CustomTaskViewSet(viewsets.ModelViewSet):
-    """View for manage Task APIs"""
-    serializer_class = serializers.CustomTaskDetailSerializer
-    queryset = Task.objects.all()
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-    model = Task
-
-    def get_queryset(self):
-        """Retrieve Tasks for auth user"""
-        queryset = self.queryset
-        return queryset.filter(
-            is_custom=True,
-        ).order_by('-id').distinct()
-
-    def get_permissions(self):
-        perm = check_permissions(self)
-        if perm is not None:
-            return perm
-        return super().get_permissions()
-
-    def perform_create(self, serializer):
-        """Create a new Task"""
-        serializer.save(created_by=self.request.user, is_custom=True)
 
 
 class BasicChoiceViewSet(viewsets.ModelViewSet):

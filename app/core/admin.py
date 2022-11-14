@@ -63,3 +63,6 @@ admin.site.register(models.Meeting)
 
 admin.site.register(models.CustomChoice)
 admin.site.register(models.CustomQuestion)
+
+admin.site.register(models.FourChoice)
+admin.site.register(models.FourQuestion)

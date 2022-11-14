@@ -11,7 +11,6 @@ from task import views
 
 router = DefaultRouter()
 router.register('tasks', views.TaskViewSet)
-router.register('custom_task', views.CustomTaskViewSet)
 router.register('basic_choices', views.BasicChoiceViewSet)
 router.register('tags', views.TagViewSet)
 router.register('results', views.TaskResultViewSet)
