@@ -40,7 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'email', 'name', 'password', 'confirm_password',
-                  'image', 'is_therapist', 'assigned_tasks',
+                  'image', 'is_therapist','my_meetings', 'assigned_tasks',
                   'assigned_to', 'assignment_active']
         extra_kwargs = {
             'password': {
@@ -172,7 +172,7 @@ class WaitingToLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'email', 'name', 'image',
+        fields = ['id', 'email', 'name', 'image', 'assigned_tasks',
                   'assigned_to', 'assignment_active']
         read_only_fields = ['id', 'email', 'name',
                             'image', 'assigned_to',

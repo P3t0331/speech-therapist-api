@@ -54,8 +54,8 @@ def check_permissions(self):
         parameters=[
             OpenApiParameter(
                 'task_type',
-                OpenApiTypes.STR, enum=['basictask', 'customtask',
-                                        'fourchoicestask'],
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                                        'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
                 description="Get questions based on this task type"
             )
         ]
@@ -64,8 +64,8 @@ def check_permissions(self):
         parameters=[
             OpenApiParameter(
                 'task_type',
-                OpenApiTypes.STR, enum=['basictask', 'customtask',
-                                        'fourchoicestask'],
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                                        'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
                 description="POST questions based on this task type"
             )
         ]
@@ -119,15 +119,16 @@ class TaskViewSet(viewsets.ModelViewSet):
             return serializers.AssignTaskSerializer
         elif self.action == 'get_random_task':
             return serializers.RandomTaskSerializer
-        elif task_param == 'customtask':
+        elif task_param == 'Connect_Pairs_Text-Text':
             return serializers.CustomTaskDetailSerializer
-        elif task_param == 'fourchoicestask':
+        elif task_param == 'Four_Choices_Image-Texts' or task_param == 'Four_Choices_Text-Images':
             return serializers.FourChoicesTaskDetailSerializer
         return self.serializer_class
 
     def perform_create(self, serializer):
         """Create a new Task"""
-        if self.get_serializer_class() == serializers.CustomTaskDetailSerializer:
+        if self.get_serializer_class() == serializers.CustomTaskDetailSerializer \
+           or self.get_serializer_class() == serializers.FourChoicesTaskDetailSerializer:
             serializer.save(created_by=self.request.user, is_custom=True)
         else:
             serializer.save(created_by=self.request.user)
@@ -196,6 +197,28 @@ class TagViewSet(mixins.DestroyModelMixin,
         return super().get_permissions()
 
 
+@extend_schema_view(
+    retrieve=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'task_type',
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                                        'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
+                description="Get questions based on this task type"
+            )
+        ]
+    ),
+    create=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'task_type',
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                                        'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
+                description="POST questions based on this task type"
+            )
+        ]
+    )
+)
 class TaskResultViewSet(mixins.CreateModelMixin,
                         mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
@@ -206,6 +229,16 @@ class TaskResultViewSet(mixins.CreateModelMixin,
     permission_classes = [IsAuthenticated]
     queryset = TaskResult.objects.all()
     serializer_class = serializers.TaskDetailResultSerializer
+
+    def get_serializer_class(self):
+        """Return the serializer class for request"""
+        task_param = self.request.query_params.get('task_type', 'invalid')
+        if self.action == 'list':
+            return serializers.TaskResultSerializer
+        if task_param == 'Four_Choices_Image-Texts' or task_param == 'Four_Choices_Text-Images':
+            return serializers.TaskDetailFourChoiceResultSerializer
+        else:
+            return self.serializer_class
 
     def get_permissions(self):
         if self.action == 'destroy':
@@ -219,9 +252,3 @@ class TaskResultViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(answered_by=self.request.user)
-
-    def get_serializer_class(self):
-        """Return the serializer class for request"""
-        if self.action == 'list':
-            return serializers.TaskResultSerializer
-        return self.serializer_class

@@ -59,6 +59,7 @@ admin.site.register(models.Tag)
 admin.site.register(models.TaskResult)
 admin.site.register(models.QuestionConnectImageAnswer)
 admin.site.register(models.Answer)
+admin.site.register(models.AnswerFourChoice)
 admin.site.register(models.Meeting)
 
 admin.site.register(models.CustomChoice)

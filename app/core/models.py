@@ -12,6 +12,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin
 )
+from django.forms.models import model_to_dict
 
 
 def choices_image_file_path(instance, filename):
@@ -96,6 +97,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     def assigned_patients_count(self):
         return self.patients.count()
 
+    @property
+    def my_meetings(self):
+        res = []
+        for i in Meeting.objects.filter(assigned_patient=self.id):
+            res.append(model_to_dict(i))
+        return res
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -111,10 +119,10 @@ class Task(models.Model):
         HARD = 'Hard'
 
     class Type(models.TextChoices):
-        four_choices_image = 'Four Choices (Image-Texts)',
-        four_choices_text = 'Four Choices (Text-Image)',
-        connect_pairs_text_image = 'Connect Pairs (Text-Image)',
-        connect_pairs_text_text = 'Connect Pairs (Text-Text)',
+        four_choices_image = 'Four_Choices_Image-Texts',
+        four_choices_text = 'Four_Choices_Text-Images',
+        connect_pairs_text_image = 'Connect_Pairs_Text-Image',
+        connect_pairs_text_text = 'Connect_Pairs_Text-Text',
 
     name = models.CharField(max_length=255)
 
@@ -266,6 +274,25 @@ class Answer(models.Model):
     assigned_to_question = models.ForeignKey(
         QuestionConnectImageAnswer,
         related_name="answer",
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return "Result answers for " + str(self.assigned_to_question)
+
+
+class AnswerFourChoice(models.Model):
+    """Model for storing answers for four choice task"""
+    data1 = models.CharField(max_length=255)
+    data2 = models.CharField(max_length=255)
+    data3 = models.CharField(max_length=255)
+    data4 = models.CharField(max_length=255)
+    data5 = models.CharField(max_length=255)
+    chosen_option = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=True)
+    assigned_to_question = models.ForeignKey(
+        QuestionConnectImageAnswer,
+        related_name="answer_fourchoice",
         on_delete=models.CASCADE,
     )
 

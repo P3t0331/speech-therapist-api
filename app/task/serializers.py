@@ -17,6 +17,7 @@ from core.models import (
     CustomQuestion,
     FourChoice,
     FourQuestion,
+    AnswerFourChoice,
 )
 from user.serializers import UserSerializer
 
@@ -419,6 +420,13 @@ class AnswerSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class AnswerFourChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnswerFourChoice
+        fields = ['id', 'data1', 'data2', 'data3', 'data4',
+                  'data5', 'chosen_option', 'is_correct']
+
+
 class QuestionConnectImageAnswerSerializer(serializers.ModelSerializer):
     answer = AnswerSerializer(required=True, many=True)
 
@@ -435,6 +443,14 @@ class QuestionConnectImageAnswerSerializer(serializers.ModelSerializer):
         answers = validated_data.pop('answer', [])
         answer = QuestionConnectImageAnswer.objects.create(**validated_data)
         self._create_answer(answers, answer)
+
+
+class QuestionFourChoiceAnswerSerializer(QuestionConnectImageAnswerSerializer):
+    answer = AnswerFourChoiceSerializer(required=True, many=True, source='answer_fourchoice')
+
+    def _create_answer(self, answers, answer):
+        for answer_data in answers:
+            AnswerFourChoice.objects.create(assigned_to_question=answer, **answer_data)
 
 
 class TaskDetailResultSerializer(serializers.ModelSerializer):
@@ -469,6 +485,41 @@ class TaskDetailResultSerializer(serializers.ModelSerializer):
             )
             for answer_data in answer:
                 Answer.objects.create(assigned_to_question=question,
+                                      **answer_data)
+        return result
+
+
+class TaskDetailFourChoiceResultSerializer(serializers.ModelSerializer):
+    answers = QuestionFourChoiceAnswerSerializer(required=True, many=True)
+
+    class Meta:
+        model = TaskResult
+        fields = ['id', 'answered_by', 'task', 'answers']
+        read_only_fields = ['id', 'answered_by']
+
+    def create(self, validated_data):
+        """Create a result"""
+        if (TaskResult.objects.filter(
+                answered_by=self.context['request'].user,
+                task=validated_data.get('task')
+            ) is not None
+        ):
+            TaskResult.objects.filter(
+                answered_by=self.context['request'].user,
+                task=validated_data.get('task')
+            ).delete()
+
+        answers = validated_data.pop('answers', [])
+        result = TaskResult.objects.create(**validated_data)
+
+        for answers_data in answers:
+            answer = answers_data.pop('answer_fourchoice', [])
+            question = QuestionConnectImageAnswer.objects.create(
+                assigned_to=result,
+                **answers_data
+            )
+            for answer_data in answer:
+                AnswerFourChoice.objects.create(assigned_to_question=question,
                                       **answer_data)
         return result
 

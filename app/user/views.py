@@ -14,7 +14,7 @@ from user.serializers import (
     PatientViewSerializer,
 )
 from user.serializers import AuthTokenSerializer
-from core.models import User
+from core.models import User, Meeting
 from core.permissions import IsTherapist
 
 from drf_spectacular.utils import (
@@ -135,14 +135,13 @@ class PatientsWaitingToLinkView(generics.ListAPIView):
     """API for listing patients that are waiting to be linked"""
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
     serializer_class = WaitingToLinkSerializer
 
     def get_queryset(self):
         queryset = User.objects.all().exclude(
             assigned_to__isnull=True
         ).filter(assignment_active=False)
-        queryset.filter(
+        queryset = queryset.filter(
             assigned_to=self.request.user
         ).order_by('-id').distinct()
         return queryset
@@ -193,7 +192,7 @@ class TherapistUnlinkView(GenericLinkView):
     def update(self, request, *args, **kwargs):
         request_id = int(self.kwargs['pk'])
         User.objects.filter(id=request_id).update(
-            assigned_to='',
+            assigned_to=None,
             assignment_active=False
         )
         return super().update(request, *args, **kwargs)
@@ -212,8 +211,9 @@ class PatientUnlinkView(generics.UpdateAPIView):
         return self.request.user
 
     def update(self, request, *args, **kwargs):
-        User.objects.filter(id=self.get_object().id).update(
-            assigned_to='',
-            assignment_active=False
-        )
+        self.request.user.assigned_to = None
+        self.request.user.assignment_active = False
+        self.request.user.assigned_tasks.clear()
+        Meeting.objects.all().filter(assigned_patient=self.request.user).delete()
+        self.request.user.save()
         return super().update(request, *args, **kwargs)
