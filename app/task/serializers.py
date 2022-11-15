@@ -378,7 +378,7 @@ class FourChoicesTaskDetailSerializer(serializers.ModelSerializer):
     def _generate_questions(self, task, type):
         for _ in range(10):
             question = FourQuestion.objects.create(assigned_to=task)
-            if type == 'Four Choices (Image-Texts)':
+            if type == 'Four_Choices_Image-Texts':
                 self._get_choices_image_text(question, task)
             else:
                 self._get_choices_text_image(question, task)
