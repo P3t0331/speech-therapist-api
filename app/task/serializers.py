@@ -81,7 +81,7 @@ class FourChoiceSerializer(BasicChoiceSerializer):
 
     class Meta:
         model = FourChoice
-        fields = ['id', 'data1', 'data2', 'data3', 'data4', 'data5']
+        fields = ['id', 'question_data', 'correct_option', 'incorrect_option1', 'incorrect_option2', 'incorrect_option3']
         read_only_fields = ['id', 'created_by']
 
     def _get_or_create_tags(self, tags, four_choice):
@@ -350,11 +350,11 @@ class FourChoicesTaskDetailSerializer(serializers.ModelSerializer):
         first_choice = random_choices.pop()
         request = self.context.get('request')
         choice = FourChoice.objects.create(
-            data1 = request.build_absolute_uri(first_choice.data2.url),
-            data2 = first_choice.data1,
-            data3 = random_choices.pop().data1,
-            data4 = random_choices.pop().data1,
-            data5 = random_choices.pop().data1,
+            question_data = request.build_absolute_uri(first_choice.data2.url),
+            correct_option = first_choice.data1,
+            incorrect_option1 = random_choices.pop().data1,
+            incorrect_option2 = random_choices.pop().data1,
+            incorrect_option3 = random_choices.pop().data1,
             assigned_to=task
         )
         question.choices.add(choice)
@@ -365,11 +365,11 @@ class FourChoicesTaskDetailSerializer(serializers.ModelSerializer):
         first_choice = random_choices.pop()
         request = self.context.get('request')
         choice = FourChoice.objects.create(
-            data1 = first_choice.data1,
-            data2 = request.build_absolute_uri(first_choice.data2.url),
-            data3 = request.build_absolute_uri(random_choices.pop().data2.url),
-            data4 = request.build_absolute_uri(random_choices.pop().data2.url),
-            data5 = request.build_absolute_uri(random_choices.pop().data2.url),
+            question_data = first_choice.data1,
+            correct_option = request.build_absolute_uri(first_choice.data2.url),
+            incorrect_option1 = request.build_absolute_uri(random_choices.pop().data2.url),
+            incorrect_option2 = request.build_absolute_uri(random_choices.pop().data2.url),
+            incorrect_option3 = request.build_absolute_uri(random_choices.pop().data2.url),
             assigned_to=task
         )
         question.choices.add(choice)
@@ -423,8 +423,8 @@ class AnswerSerializer(serializers.ModelSerializer):
 class AnswerFourChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnswerFourChoice
-        fields = ['id', 'data1', 'data2', 'data3', 'data4',
-                  'data5', 'chosen_option', 'is_correct']
+        fields = ['id', 'question_data', 'correct_option', 'incorrect_option1', 'incorrect_option2',
+                  'incorrect_option3', 'chosen_option', 'is_correct']
 
 
 class QuestionConnectImageAnswerSerializer(serializers.ModelSerializer):

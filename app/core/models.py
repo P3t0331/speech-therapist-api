@@ -217,11 +217,11 @@ class CustomChoice(models.Model):
 
 class FourChoice(models.Model):
     """Model for storing 4 choices task"""
-    data1 = models.CharField(max_length=255)
-    data2 = models.CharField(max_length=255)
-    data3 = models.CharField(max_length=255)
-    data4 = models.CharField(max_length=255)
-    data5 = models.CharField(max_length=255)
+    question_data = models.CharField(max_length=255)
+    correct_option = models.CharField(max_length=255)
+    incorrect_option1 = models.CharField(max_length=255)
+    incorrect_option2 = models.CharField(max_length=255)
+    incorrect_option3 = models.CharField(max_length=255)
     assigned_to = models.ForeignKey(
         Task,
         on_delete=models.CASCADE,
@@ -283,11 +283,11 @@ class Answer(models.Model):
 
 class AnswerFourChoice(models.Model):
     """Model for storing answers for four choice task"""
-    data1 = models.CharField(max_length=255)
-    data2 = models.CharField(max_length=255)
-    data3 = models.CharField(max_length=255)
-    data4 = models.CharField(max_length=255)
-    data5 = models.CharField(max_length=255)
+    question_data = models.CharField(max_length=255)
+    correct_option = models.CharField(max_length=255)
+    incorrect_option1 = models.CharField(max_length=255)
+    incorrect_option2 = models.CharField(max_length=255)
+    incorrect_option3 = models.CharField(max_length=255)
     chosen_option = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=True)
     assigned_to_question = models.ForeignKey(
