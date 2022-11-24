@@ -259,12 +259,12 @@ class CustomTaskDetailSerializer(TaskDetailSerializer):
         auth_user = self.context['request'].user
         for question in questions:
             choices = question.pop('choices', [])
-            question_obj, created = CustomQuestion.objects.get_or_create(
+            question_obj = CustomQuestion.objects.create(
                 assigned_to=task
             )
             for choice in choices:
                 tags = choice.pop('tags', [])
-                choice_obj, created = CustomChoice.objects.get_or_create(
+                choice_obj = CustomChoice.objects.create(
                     created_by=auth_user,
                     assigned_to=task,
                     **choice,
@@ -328,12 +328,12 @@ class FourChoicesTaskDetailSerializer(serializers.ModelSerializer):
         auth_user = self.context['request'].user
         for question in questions:
             choices = question.pop('choices', [])
-            question_obj, created = FourQuestion.objects.get_or_create(
+            question_obj = FourQuestion.objects.create(
                 assigned_to=task
             )
             for choice in choices:
                 tags = choice.pop('tags', [])
-                choice_obj, created = FourChoice.objects.get_or_create(
+                choice_obj = FourChoice.objects.create(
                     **choice,
                 )
                 for tag in tags:
