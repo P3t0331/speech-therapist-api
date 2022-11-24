@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     'task',
     'meeting',
     'corsheaders',
-    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -154,9 +153,4 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
-}
-
-GRAPH_MODELS = {
-  'all_applications': True,
-  'group_models': True,
 }
