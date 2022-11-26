@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'task',
     'meeting',
     'corsheaders',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
