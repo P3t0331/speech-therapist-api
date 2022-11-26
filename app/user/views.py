@@ -12,10 +12,11 @@ from user.serializers import (
     WaitingToLinkSerializer,
     UpdateNoteSerializer,
     PatientViewSerializer,
+    UpdateDiagnosisSerializer,
 )
 from user.serializers import AuthTokenSerializer
 from core.models import User, Meeting
-from core.permissions import IsTherapist
+from core.permissions import IsTherapist, IsPatientAssignedToTherapist
 
 from drf_spectacular.utils import (
     extend_schema_view,
@@ -78,7 +79,7 @@ class ListPatientUserView(generics.ListAPIView):
     """List patient users"""
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated & IsTherapist]
 
     def get_queryset(self):
         queryset = User.objects.all().filter(is_therapist=False)
@@ -106,7 +107,7 @@ class ListTherapistUserView(generics.ListAPIView):
 
 class GetPatientUserView(generics.RetrieveAPIView):
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated & IsPatientAssignedToTherapist & IsTherapist]
     queryset = User.objects.all()
     serializer_class = PatientViewSerializer
 
@@ -151,7 +152,7 @@ class GenericLinkView(generics.UpdateAPIView):
     """Generic view for links"""
     http_method_names = ['patch']
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated & IsTherapist]
     lookup_field = 'pk'
 
     queryset = User.objects.all()
@@ -179,12 +180,21 @@ class RejectLinkView(GenericLinkView):
 
 
 class UpdateNoteView(generics.UpdateAPIView):
-    """API for linking to therapists"""
+    """API for adding notes to patients"""
     http_method_names = ['patch']
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated & IsTherapist]
     queryset = User.objects.all()
     serializer_class = UpdateNoteSerializer
+
+
+class UpdateDiagnosisView(generics.UpdateAPIView):
+    """API for adding notes to patients"""
+    http_method_names = ['patch']
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated & IsTherapist]
+    queryset = User.objects.all()
+    serializer_class = UpdateDiagnosisSerializer
 
 
 class TherapistUnlinkView(GenericLinkView):

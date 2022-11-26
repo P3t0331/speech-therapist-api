@@ -35,6 +35,8 @@ urlpatterns = [
          views.RejectLinkView.as_view(), name='reject-link'),
     path('therapist/<pk>/note/',
          views.UpdateNoteView.as_view(), name='update-note'),
+    path('therapist/<pk>/diagnosis/',
+         views.UpdateDiagnosisView.as_view(), name='update-diagnosis'),
     path('therapist/link/<pk>/unlink/',
          views.TherapistUnlinkView.as_view(), name='therapist-unlink-patient'),
     path('patient/unlink/',

@@ -40,7 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['id', 'email', 'name', 'password', 'confirm_password',
-                  'image', 'is_therapist','my_meetings', 'assigned_tasks',
+                  'image', 'is_therapist', 'day_streak', 'my_meetings', 'assigned_tasks',
                   'assigned_to', 'assignment_active']
         extra_kwargs = {
             'password': {
@@ -51,7 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
             }
         read_only_fields = ['id', 'is_therapist',
                             'assigned_tasks', 'assigned_to',
-                            'assignment_active']
+                            'assignment_active', 'day_streak']
 
     def validate(self, data):
         """
@@ -79,7 +79,7 @@ class UserSerializer(serializers.ModelSerializer):
 class PatientViewSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ['notes']
+        fields = UserSerializer.Meta.fields + ['notes', 'diagnosis']
 
 
 class UserTherapistSerializer(UserSerializer):
@@ -192,4 +192,20 @@ class UpdateNoteSerializer(serializers.ModelSerializer):
             id=object_id
         ).update(notes=validated_data.get('notes'))
         instance.notes = validated_data.get('notes')
+        return super().update(instance, validated_data)
+
+
+class UpdateDiagnosisSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = get_user_model()
+        fields = ['diagnosis']
+
+    def update(self, instance, validated_data):
+        my_view = self.context['view']
+        object_id = my_view.kwargs.get('pk')
+        get_user_model().objects.all().filter(
+            id=object_id
+        ).update(notes=validated_data.get('diagnosis'))
+        instance.diagnosis = validated_data.get('diagnosis')
         return super().update(instance, validated_data)

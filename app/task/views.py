@@ -13,7 +13,9 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from core.permissions import IsTherapist, IsOwnerOfObject
+from django.utils import timezone
+
+from core.permissions import IsTherapist, IsOwnerOfObject, IsTaskResultMyPatient
 from core.models import Task, BasicChoice, Tag, TaskResult
 from task import serializers
 
@@ -241,8 +243,8 @@ class TaskResultViewSet(mixins.CreateModelMixin,
             return self.serializer_class
 
     def get_permissions(self):
-        if self.action == 'destroy':
-            composed_perm = IsAuthenticated & IsTherapist
+        if self.action == 'destroy' or self.action == 'retrieve':
+            composed_perm = IsAuthenticated & IsTherapist & IsTaskResultMyPatient
             return [composed_perm()]
         return super().get_permissions()
 
@@ -251,4 +253,6 @@ class TaskResultViewSet(mixins.CreateModelMixin,
         return queryset.order_by('-id').distinct()
 
     def perform_create(self, serializer):
-        serializer.save(answered_by=self.request.user)
+        serializer.save(answered_by=self.request.user, date_created=timezone.now())
+        self.request.user.last_result_posted = timezone.now()
+        self.request.user.save()

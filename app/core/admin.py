@@ -16,8 +16,8 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password', 'name', 'assigned_tasks',
                            'image', 'phone', 'location', 'country',
-                           'company', 'therapist_code', 'assigned_to',
-                           'notes', 'bio')}),
+                           'company', 'therapist_code', 'assigned_to', 'day_streak',
+                           'last_result_posted', 'notes', 'diagnosis', 'bio')}),
         (
             _('Permissions'),
             {

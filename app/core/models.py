@@ -13,6 +13,10 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.forms.models import model_to_dict
+from django.dispatch import receiver
+from django.db.models.signals import pre_save
+from django.utils import timezone
+from django.utils.timezone import timedelta
 
 
 def choices_image_file_path(instance, filename):
@@ -82,6 +86,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     company = models.CharField(max_length=255, null=True, blank=True)
     therapist_code = models.CharField(max_length=5, null=True, blank=True)
     bio = models.TextField(blank=True)
+    day_streak = models.IntegerField(default=0)
+    last_result_posted = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
 
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -92,6 +98,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     assignment_active = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
+    diagnosis = models.TextField(blank=True)
 
     @property
     def assigned_patients_count(self):
@@ -249,6 +256,7 @@ class TaskResult(models.Model):
         on_delete=models.CASCADE,
     )
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now=False)
 
     def __str__(self):
         return "Result task" + str(self.task.id)
@@ -320,3 +328,24 @@ class Meeting(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@receiver(pre_save, sender=TaskResult, dispatch_uid='post_save_taskresult_streak_handler')
+def post_save_taskresult_streak_handler(sender, instance: TaskResult, **kargs):
+    print("Result uploaded")
+    user = instance.answered_by
+    last_result = user.last_result_posted
+    if not last_result:
+        print("No Result Found")
+        user.day_streak = 1
+        user.save()
+        return
+    today = timezone.now().date()
+    last_result_date = last_result.date()
+    if last_result_date == today - timedelta(days=1):
+        print("Found result, adding daystreak")
+        user.day_streak += 1
+    elif last_result_date != today:
+        print("Found result, but not today or yesterday")
+        user.day_streak = 1
+    user.save()

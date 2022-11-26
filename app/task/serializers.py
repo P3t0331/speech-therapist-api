@@ -459,8 +459,8 @@ class TaskDetailResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaskResult
-        fields = ['id', 'answered_by', 'task', 'answers']
-        read_only_fields = ['id', 'answered_by']
+        fields = ['id', 'answered_by', 'task', 'date_created', 'answers']
+        read_only_fields = ['id', 'answered_by', 'date_created']
 
     def create(self, validated_data):
         """Create a result"""
