@@ -526,7 +526,7 @@ class TaskDetailFourChoiceResultSerializer(serializers.ModelSerializer):
 
 class TaskResultSerializer(TaskDetailResultSerializer):
     class Meta(TaskDetailResultSerializer.Meta):
-        fields = ['id', 'answered_by', 'task']
+        fields = ['id', 'answered_by', 'task', 'date_created']
 
 
 class AssignTaskSerializer(serializers.ModelSerializer):
