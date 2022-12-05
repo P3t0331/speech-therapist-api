@@ -54,7 +54,7 @@ class ManagerUserView(generics.RetrieveUpdateAPIView):
 
 
 class ManagerUserTherapistView(generics.RetrieveUpdateAPIView):
-    """Manage authenticated user"""
+    """Manage authenticated therapist user"""
     serializer_class = UserTherapistSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated, IsTherapist]
@@ -76,12 +76,19 @@ class ManagerUserTherapistView(generics.RetrieveUpdateAPIView):
     )
 )
 class ListPatientUserView(generics.ListAPIView):
-    """List patient users"""
+    """
+    View for listing patient users.
+    """
     serializer_class = UserSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated & IsTherapist]
 
     def get_queryset(self):
+        """
+        This view will return a list of all the patient users.
+        If the 'linked_only' query parameter is provided with a value of 1,
+        the view will return only patients that are linked to the authenticated therapist.
+        """
         queryset = User.objects.all().filter(is_therapist=False)
         linked_only = bool(
             int(self.request.query_params.get('linked_only', 0))
@@ -95,17 +102,25 @@ class ListPatientUserView(generics.ListAPIView):
 
 
 class ListTherapistUserView(generics.ListAPIView):
-    """List therapist users"""
+    """
+    View for listing therapist users.
+    """
     serializer_class = UserTherapistSerializer
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """
+        This view will return a list of all the therapist users.
+        """
         queryset = User.objects.all().filter(is_therapist=True)
         return queryset
 
 
 class GetPatientUserView(generics.RetrieveAPIView):
+    """
+    View for retrieving a patient user.
+    """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated & IsPatientAssignedToTherapist & IsTherapist]
     queryset = User.objects.all()
@@ -113,6 +128,9 @@ class GetPatientUserView(generics.RetrieveAPIView):
 
 
 class GetTherapistUserView(generics.RetrieveAPIView):
+    """
+    View for retrieving a therapist user.
+    """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all()
@@ -120,7 +138,7 @@ class GetTherapistUserView(generics.RetrieveAPIView):
 
 
 class AssignTherapistView(generics.UpdateAPIView):
-    """API for linking to therapists"""
+    """View for linking to therapists"""
     http_method_names = ['patch']
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -133,7 +151,7 @@ class AssignTherapistView(generics.UpdateAPIView):
 
 
 class PatientsWaitingToLinkView(generics.ListAPIView):
-    """API for listing patients that are waiting to be linked"""
+    """View for listing patients that are waiting to be linked"""
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = WaitingToLinkSerializer
@@ -160,7 +178,7 @@ class GenericLinkView(generics.UpdateAPIView):
 
 
 class AcceptLinkView(GenericLinkView):
-    """API for accepting link to therapists"""
+    """View for accepting link to therapists"""
     def update(self, request, *args, **kwargs):
         request_id = int(self.kwargs['pk'])
         User.objects.filter(id=request_id).update(assignment_active=True)
@@ -168,7 +186,7 @@ class AcceptLinkView(GenericLinkView):
 
 
 class RejectLinkView(GenericLinkView):
-    """API for rejecting link to therapists"""
+    """View for rejecting link to therapists"""
 
     def update(self, request, *args, **kwargs):
         request_id = int(self.kwargs['pk'])
@@ -180,7 +198,9 @@ class RejectLinkView(GenericLinkView):
 
 
 class UpdateNoteView(generics.UpdateAPIView):
-    """API for adding notes to patients"""
+    """
+    View for adding notes to patients.
+    """
     http_method_names = ['patch']
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated & IsTherapist]
@@ -189,7 +209,9 @@ class UpdateNoteView(generics.UpdateAPIView):
 
 
 class UpdateDiagnosisView(generics.UpdateAPIView):
-    """API for adding notes to patients"""
+    """
+    View for adding diagnoses to patients.
+    """
     http_method_names = ['patch']
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated & IsTherapist]
@@ -198,17 +220,23 @@ class UpdateDiagnosisView(generics.UpdateAPIView):
 
 
 class TherapistUnlinkView(GenericLinkView):
-
+    """
+    View for therapist for unassigning a patient.
+    """
     def update(self, request, *args, **kwargs):
         request_id = int(self.kwargs['pk'])
-        User.objects.filter(id=request_id).update(
-            assigned_to=None,
-            assignment_active=False
-        )
+        user = User.objects.filter(id=request_id).first()
+        user.assigned_to = None
+        user.assignment_active = False
+        user.assigned_tasks.clear()
+        Meeting.objects.all().filter(assigned_patient=user).delete()
+        user.save()
         return super().update(request, *args, **kwargs)
 
 class PatientUnlinkView(generics.UpdateAPIView):
-    """Generic view for links"""
+    """
+    View for patient for unassigning a therapist.
+    """
     http_method_names = ['patch']
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]

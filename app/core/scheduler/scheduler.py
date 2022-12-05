@@ -8,7 +8,6 @@ import sys
 
 from core.models import User, TaskResult
 
-# This is the function you want to schedule - add as many as you want and then register them in the start() function below
 def check_daystreak():
     patients = User.objects.filter(is_therapist=False)
     today = timezone.now().date()
@@ -27,7 +26,6 @@ def check_daystreak():
 def start():
     scheduler = BackgroundScheduler()
     scheduler.add_jobstore(DjangoJobStore(), "default")
-    # run this job every 24 hours
     scheduler.add_job(check_daystreak, trigger=CronTrigger(hour="00", minute="00"), id='check_daystreak', name='check_daystreak', jobstore='default', replace_existing=True)
     register_events(scheduler)
     scheduler.start()

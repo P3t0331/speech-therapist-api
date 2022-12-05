@@ -10,7 +10,9 @@ from meeting import serializers
 
 
 class MeetingViewSet(viewsets.ModelViewSet):
-    """View for managing Meetings"""
+    """
+    View for managing Meetings.
+    """
     model = Meeting
     queryset = Meeting.objects.all()
     serializer_class = serializers.MeetingSerializer
@@ -18,11 +20,15 @@ class MeetingViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Retrieve Meetings for auth user"""
+        """
+        Retrieve Meetings for the authenticated user.
+        """
         return self.queryset.filter(
             created_by=self.request.user
         ).order_by('-name').distinct()
 
     def perform_create(self, serializer):
-        """Create a new Meeting"""
+        """
+        Create a new Meeting.
+        """
         serializer.save(created_by=self.request.user)

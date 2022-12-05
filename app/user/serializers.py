@@ -15,7 +15,9 @@ from random import choice
 
 
 class TaskSerializerForUser(serializers.ModelSerializer):
-    """Serializer for Tasks"""
+    """
+    Serializer for representing tasks assigned to users.
+    """
     class Meta:
         model = Task
         fields = ['id', 'name', 'type', 'difficulty']
@@ -23,7 +25,9 @@ class TaskSerializerForUser(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer for the user object"""
+    """
+    Serializer for representing users.
+    """
     assigned_tasks = TaskSerializerForUser(many=True, required=False)
     assigned_to = serializers.SlugRelatedField(
         many=False,
@@ -55,19 +59,22 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Checks to be sure that the received password and confirm_password
-        fields are exactly the same
+        Validate that the password and confirm_password fields are the same.
         """
         if data.get('password') != data.pop('confirm_password', None):
             raise serializers.ValidationError("Passwords do not match")
         return data
 
     def create(self, validated_data):
-        """Create and return a user with encrypted password"""
+        """
+        Create and return a user with encrypted password.
+        """
         return get_user_model().objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
-        """Update and return user"""
+        """
+        Update and return user.
+        """
         password = validated_data.pop('password', None)
         user = super().update(instance, validated_data)
         if password:
@@ -77,13 +84,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PatientViewSerializer(UserSerializer):
-
+    """
+    Serializer for representing patients and their notes and diagnoses.
+    """
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ['notes', 'diagnosis']
 
 
 class UserTherapistSerializer(UserSerializer):
-    """Serializer for the therapist user object"""
+    """
+    Serializer for creating and representing therapist users.
+    """
     class Meta(UserSerializer.Meta):
         fields = ['id', 'email', 'name', 'password', 'confirm_password',
                   'is_therapist', 'image',
@@ -101,18 +112,25 @@ class UserTherapistSerializer(UserSerializer):
             }
 
     def _generate_code(self, length=5):
+        """
+        Generate a random alphabetic code for the therapist.
+        """
         letters = ascii_lowercase
         result_str = ''.join(choice(letters) for i in range(length))
         return result_str
 
     def create(self, validated_data):
-        """Create and return a user with encrypted password"""
+        """
+        Create and return a therapist user with encrypted password and a random therapist code.
+        """
         validated_data['therapist_code'] = self._generate_code()
         return get_user_model().objects.create_therapist_user(**validated_data)
 
 
 class AuthTokenSerializer(serializers.Serializer):
-    """Serializer for the user auth token"""
+    """
+    Serializer for authenticating users with their email and password.
+    """
     email = serializers.EmailField()
     password = serializers.CharField(
         style={'input_type': 'password'},
@@ -120,7 +138,9 @@ class AuthTokenSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
-        """Validate and auth the user"""
+        """
+        Validate the provided email and password and return the authenticated user.
+        """
         email = attrs.get('email')
         password = attrs.get('password')
         user = authenticate(
@@ -137,7 +157,9 @@ class AuthTokenSerializer(serializers.Serializer):
 
 
 class AssignTherapistSerializer(serializers.ModelSerializer):
-    """Serializer for assigning therapists"""
+    """
+    Serializer for assigning patients to therapists based on therapist codes.
+    """
     assigned_to = serializers.SlugRelatedField(
         many=False,
         slug_field='email',
@@ -152,6 +174,9 @@ class AssignTherapistSerializer(serializers.ModelSerializer):
         }
 
     def update(self, instance, validated_data):
+        """
+        Assign the current user (patient) to the therapist with the specified code.
+        """
         code = validated_data.pop('therapist_code')
         try:
             therapist = get_user_model().objects.get(therapist_code=code)
@@ -169,43 +194,51 @@ class AssignTherapistSerializer(serializers.ModelSerializer):
 
 
 class WaitingToLinkSerializer(serializers.ModelSerializer):
-
+    """
+    Serializer for representing a user who is waiting to be linked to an therapist.
+    """
     class Meta:
         model = get_user_model()
         fields = ['id', 'email', 'name', 'image', 'assigned_tasks',
                   'assigned_to', 'assignment_active']
         read_only_fields = ['id', 'email', 'name',
-                            'image', 'assigned_to',
+                            'image', 'assigned_tasks', 'assigned_to',
                             'assignment_active']
 
 
-class UpdateNoteSerializer(serializers.ModelSerializer):
-
+class UpdateUserFieldSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating fields on a user model.
+    """
     class Meta:
         model = get_user_model()
+        fields = []  # this will be overridden in child classes
+
+    def update(self, instance, validated_data):
+        """
+        Update the specified fields on the user instance.
+        """
+        my_view = self.context['view']
+        object_id = my_view.kwargs.get('pk')
+        get_user_model().objects.all().filter(
+            id=object_id
+        ).update(**validated_data)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        return super().update(instance, validated_data)
+
+
+class UpdateNoteSerializer(UpdateUserFieldSerializer):
+    """
+    Serializer for updating the 'notes' field on a user model.
+    """
+    class Meta(UpdateUserFieldSerializer.Meta):
         fields = ['notes']
 
-    def update(self, instance, validated_data):
-        my_view = self.context['view']
-        object_id = my_view.kwargs.get('pk')
-        get_user_model().objects.all().filter(
-            id=object_id
-        ).update(notes=validated_data.get('notes'))
-        instance.notes = validated_data.get('notes')
-        return super().update(instance, validated_data)
 
-
-class UpdateDiagnosisSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = get_user_model()
+class UpdateDiagnosisSerializer(UpdateUserFieldSerializer):
+    """
+    Serializer for updating the 'diagnosis' field on a user model.
+    """
+    class Meta(UpdateUserFieldSerializer.Meta):
         fields = ['diagnosis']
-
-    def update(self, instance, validated_data):
-        my_view = self.context['view']
-        object_id = my_view.kwargs.get('pk')
-        get_user_model().objects.all().filter(
-            id=object_id
-        ).update(notes=validated_data.get('diagnosis'))
-        instance.diagnosis = validated_data.get('diagnosis')
-        return super().update(instance, validated_data)
