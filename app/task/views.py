@@ -70,7 +70,7 @@ def check_permissions(self):
         parameters=[
             OpenApiParameter(
                 'task_type',
-                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Image-custom', 'Connect_Pairs_Text-Text',
                                         'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
                 description="Get questions based on this task type"
             )
@@ -80,7 +80,7 @@ def check_permissions(self):
         parameters=[
             OpenApiParameter(
                 'task_type',
-                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Image-custom', 'Connect_Pairs_Text-Text',
                                         'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
                 description="POST questions based on this task type"
             )
@@ -90,7 +90,7 @@ def check_permissions(self):
         parameters=[
             OpenApiParameter(
                 'task_type',
-                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Text',
+                OpenApiTypes.STR, enum=['Connect_Pairs_Text-Image', 'Connect_Pairs_Text-Image-custom', 'Connect_Pairs_Text-Text',
                                         'Four_Choices_Image-Texts', 'Four_Choices_Text-Images'],
                 description="PATCH questions based on this task type"
             )
@@ -163,7 +163,7 @@ class TaskViewSet(viewsets.ModelViewSet):
             return serializers.AssignTaskSerializer
         elif self.action == 'get_random_task':
             return serializers.RandomTaskSerializer
-        elif task_param == 'Connect_Pairs_Text-Text':
+        elif task_param == 'Connect_Pairs_Text-Text' or task_param == 'Connect_Pairs_Text-Image-custom':
             return serializers.CustomTaskDetailSerializer
         elif task_param == 'Four_Choices_Image-Texts' or task_param == 'Four_Choices_Text-Images':
             return serializers.FourChoicesTaskDetailSerializer
