@@ -6,9 +6,10 @@ class CodeDoesntExistException(PermissionDenied):
     """
     Exception that is raised when the provided code does not exist.
     """
+
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "This Code does not exist"
-    default_code = 'invalid'
+    default_code = "invalid"
 
     def __init__(self, detail, status_code=None):
         self.detail = detail
@@ -20,8 +21,9 @@ class UpdateNotAllowedException(APIException):
     """
     Exception that is raised when an update is not allowed.
     """
+
     status_code = status.HTTP_403_FORBIDDEN
-    default_code = 'error'
+    default_code = "error"
 
     def __init__(self, detail, status_code=None):
         self.detail = detail

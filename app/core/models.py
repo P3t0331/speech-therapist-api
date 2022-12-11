@@ -10,7 +10,7 @@ from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
-    PermissionsMixin
+    PermissionsMixin,
 )
 from django.forms.models import model_to_dict
 from django.dispatch import receiver
@@ -22,17 +22,17 @@ from django.utils.timezone import timedelta
 def choices_image_file_path(instance, filename):
     """Generate filepath for new choice image"""
     ext = os.path.splitext(filename)[1]
-    filename = f'{uuid.uuid4()}{ext}'
+    filename = f"{uuid.uuid4()}{ext}"
 
-    return os.path.join('uploads', 'choices', filename)
+    return os.path.join("uploads", "choices", filename)
 
 
 def profile_image_file_path(instance, filename):
     """Generate filepath for new profile image"""
     ext = os.path.splitext(filename)[1]
-    filename = f'{uuid.uuid4()}{ext}'
+    filename = f"{uuid.uuid4()}{ext}"
 
-    return os.path.join('uploads', 'profile', filename)
+    return os.path.join("uploads", "profile", filename)
 
 
 class UserManager(BaseUserManager):
@@ -41,7 +41,7 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         """Create, save and return a new user"""
         if not email:
-            raise ValueError('User must have an email address.')
+            raise ValueError("User must have an email address.")
         user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -68,18 +68,15 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the system"""
+
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_therapist = models.BooleanField(default=False)
-    assigned_tasks = models.ManyToManyField('Task', blank=True)
+    assigned_tasks = models.ManyToManyField("Task", blank=True)
 
-    image = models.ImageField(
-        null=True,
-        upload_to=profile_image_file_path,
-        blank=True
-    )
+    image = models.ImageField(null=True, upload_to=profile_image_file_path, blank=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)
     country = models.CharField(max_length=255, null=True, blank=True)
@@ -87,14 +84,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     therapist_code = models.CharField(max_length=5, null=True, blank=True)
     bio = models.TextField(blank=True)
     day_streak = models.IntegerField(default=0)
-    last_result_posted = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
+    last_result_posted = models.DateTimeField(
+        auto_now=False, auto_now_add=False, null=True, blank=True
+    )
 
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='patients',
+        related_name="patients",
         null=True,
-        blank=True
+        blank=True,
     )
     assignment_active = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -113,7 +112,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
 
     def __str__(self):
         return self.email
@@ -121,15 +120,16 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Task(models.Model):
     """Model for Tasks"""
+
     class Difficulty(models.TextChoices):
-        EASY = 'Easy',
-        HARD = 'Hard'
+        EASY = ("Easy",)
+        HARD = "Hard"
 
     class Type(models.TextChoices):
-        four_choices_image = 'Four_Choices_Image-Texts',
-        four_choices_text = 'Four_Choices_Text-Images',
-        connect_pairs_text_image = 'Connect_Pairs_Text-Image',
-        connect_pairs_text_text = 'Connect_Pairs_Text-Text',
+        four_choices_image = ("Four_Choices_Image-Texts",)
+        four_choices_text = ("Four_Choices_Text-Images",)
+        connect_pairs_text_image = ("Connect_Pairs_Text-Image",)
+        connect_pairs_text_text = ("Connect_Pairs_Text-Text",)
 
     name = models.CharField(max_length=255)
 
@@ -139,15 +139,13 @@ class Task(models.Model):
     )
     difficulty = models.CharField(
         max_length=20,
-        choices=Difficulty.choices, 
+        choices=Difficulty.choices,
     )
 
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='created_by'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_by"
     )
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField("Tag")
     is_custom = models.BooleanField(default=False)
 
     def __str__(self):
@@ -156,8 +154,9 @@ class Task(models.Model):
 
 class Question(models.Model):
     """Model for storing a question"""
+
     heading = models.CharField(max_length=255, blank=True)
-    choices = models.ManyToManyField('BasicChoice')
+    choices = models.ManyToManyField("BasicChoice")
     assigned_to = models.ForeignKey(
         Task,
         related_name="questions",
@@ -170,16 +169,19 @@ class Question(models.Model):
 
 class CustomQuestion(models.Model):
     """Model for storing a question"""
-    choices = models.ManyToManyField('CustomChoice')
+
+    choices = models.ManyToManyField("CustomChoice")
     assigned_to = models.ForeignKey(
         Task,
         related_name="custom_questions",
         on_delete=models.CASCADE,
     )
 
+
 class FourQuestion(models.Model):
     """Model for storing a question"""
-    choices = models.ManyToManyField('FourChoice')
+
+    choices = models.ManyToManyField("FourChoice")
     assigned_to = models.ForeignKey(
         Task,
         related_name="fourchoice_questions",
@@ -189,10 +191,11 @@ class FourQuestion(models.Model):
 
 class BasicChoice(models.Model):
     """Model for storing choices"""
+
     data1 = models.CharField(max_length=255)
     data2 = models.ImageField(null=False, upload_to=choices_image_file_path)
-    assigned_to = models.ManyToManyField('Task', blank=True)
-    tags = models.ManyToManyField('Tag')
+    assigned_to = models.ManyToManyField("Task", blank=True)
+    tags = models.ManyToManyField("Tag")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -204,15 +207,13 @@ class BasicChoice(models.Model):
 
 class CustomChoice(models.Model):
     """Model for storing custom choices created by therapist"""
+
     data1 = models.CharField(max_length=255)
     data2 = models.CharField(max_length=255)
     assigned_to = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        Task, on_delete=models.CASCADE, null=True, blank=True
     )
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField("Tag")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -224,21 +225,20 @@ class CustomChoice(models.Model):
 
 class FourChoice(models.Model):
     """Model for storing 4 choices task"""
+
     question_data = models.CharField(max_length=255)
     correct_option = models.CharField(max_length=255)
     incorrect_option1 = models.CharField(max_length=255)
     incorrect_option2 = models.CharField(max_length=255)
     incorrect_option3 = models.CharField(max_length=255)
     assigned_to = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        Task, on_delete=models.CASCADE, null=True, blank=True
     )
 
 
 class Tag(models.Model):
     """Model for Tags"""
+
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -251,6 +251,7 @@ class Tag(models.Model):
 
 class TaskResult(models.Model):
     """Model for storing Task results"""
+
     answered_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -264,6 +265,7 @@ class TaskResult(models.Model):
 
 class QuestionConnectImageAnswer(models.Model):
     """Model for storing question answers"""
+
     assigned_to = models.ForeignKey(
         TaskResult,
         related_name="answers",
@@ -276,6 +278,7 @@ class QuestionConnectImageAnswer(models.Model):
 
 class Answer(models.Model):
     """Model for storing answers"""
+
     data1 = models.CharField(max_length=255)
     data2 = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=True)
@@ -291,6 +294,7 @@ class Answer(models.Model):
 
 class AnswerFourChoice(models.Model):
     """Model for storing answers for four choice task"""
+
     question_data = models.CharField(max_length=255)
     correct_option = models.CharField(max_length=255)
     incorrect_option1 = models.CharField(max_length=255)
@@ -310,11 +314,12 @@ class AnswerFourChoice(models.Model):
 
 class Meeting(models.Model):
     """Model for storing meetings created by therapist"""
+
     name = models.CharField(max_length=255)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="meeting_created_by"
+        related_name="meeting_created_by",
     )
     assigned_patient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -330,7 +335,9 @@ class Meeting(models.Model):
         return self.name
 
 
-@receiver(pre_save, sender=TaskResult, dispatch_uid='post_save_taskresult_streak_handler')
+@receiver(
+    pre_save, sender=TaskResult, dispatch_uid="post_save_taskresult_streak_handler"
+)
 def post_save_taskresult_streak_handler(sender, instance: TaskResult, **kargs):
     print("Result uploaded")
     user = instance.answered_by

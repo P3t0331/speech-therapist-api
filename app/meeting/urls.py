@@ -1,19 +1,14 @@
 """Url mapping for Meeting API"""
 
-from django.urls import (
-    path,
-    include
-)
+from django.urls import path, include
 
 from rest_framework.routers import DefaultRouter
 
 from meeting import views
 
 router = DefaultRouter()
-router.register('meetings', views.MeetingViewSet)
+router.register("meetings", views.MeetingViewSet)
 
-app_name = 'meeting'
+app_name = "meeting"
 
-urlpatterns = [
-    path('', include(router.urls))
-]
+urlpatterns = [path("", include(router.urls))]

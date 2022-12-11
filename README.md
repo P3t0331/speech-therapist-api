@@ -6,7 +6,7 @@ The project is intended to be deployed with Docker. The necessary Dockerfile and
 
 Install Docker and Docker Compose
 
-Clone the repository: `git clone https://github.com/P3t0331/speech-therapist-api.git`
+Clone the repository: `git clone https://github.com/P3t0331/speech-therapist-api.git` (you can skip this step of you already have the project downloaded)
 
 Navigate to the project directory: `cd speech-therapist-api`
 
@@ -14,7 +14,7 @@ Build the Docker image: `docker-compose -f docker-compose-deploy.yml build`
 
 Run the application: `docker-compose -f docker-compose-deploy.yml up -d`
 
-The application will be available at `http://localhost:8000`.
+The application will be available at `http://localhost:80`.
 
 ## Configuration
 The following environment variables must be configured before running the application:

@@ -3,10 +3,10 @@ from apscheduler.triggers.cron import CronTrigger
 from django_apscheduler.jobstores import DjangoJobStore, register_events
 from django.utils import timezone
 from django.utils.timezone import timedelta
-from django_apscheduler.models import DjangoJobExecution
 import sys
 
-from core.models import User, TaskResult
+from core.models import User
+
 
 def check_daystreak():
     patients = User.objects.filter(is_therapist=False)
@@ -26,7 +26,14 @@ def check_daystreak():
 def start():
     scheduler = BackgroundScheduler()
     scheduler.add_jobstore(DjangoJobStore(), "default")
-    scheduler.add_job(check_daystreak, trigger=CronTrigger(hour="00", minute="00"), id='check_daystreak', name='check_daystreak', jobstore='default', replace_existing=True)
+    scheduler.add_job(
+        check_daystreak,
+        trigger=CronTrigger(hour="00", minute="00"),
+        id="check_daystreak",
+        name="check_daystreak",
+        jobstore="default",
+        replace_existing=True,
+    )
     register_events(scheduler)
     scheduler.start()
     print("Scheduler started...", file=sys.stdout)

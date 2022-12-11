@@ -13,6 +13,7 @@ class MeetingViewSet(viewsets.ModelViewSet):
     """
     View for managing Meetings.
     """
+
     model = Meeting
     queryset = Meeting.objects.all()
     serializer_class = serializers.MeetingSerializer
@@ -23,9 +24,11 @@ class MeetingViewSet(viewsets.ModelViewSet):
         """
         Retrieve Meetings for the authenticated user.
         """
-        return self.queryset.filter(
-            created_by=self.request.user
-        ).order_by('-name').distinct()
+        return (
+            self.queryset.filter(created_by=self.request.user)
+            .order_by("-name")
+            .distinct()
+        )
 
     def perform_create(self, serializer):
         """

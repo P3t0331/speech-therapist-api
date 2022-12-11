@@ -10,44 +10,67 @@ from core import models
 
 class UserAdmin(BaseUserAdmin):
     """Define the admin pages for users"""
-    ordering = ['id']
-    list_display = ['email', 'name', 'is_therapist']
-    list_filter = ('is_active', 'is_superuser', 'is_therapist')
+
+    ordering = ["id"]
+    list_display = ["email", "name", "is_therapist"]
+    list_filter = ("is_active", "is_superuser", "is_therapist")
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'name', 'assigned_tasks',
-                           'image', 'phone', 'location', 'country',
-                           'company', 'therapist_code', 'assigned_to', 'day_streak',
-                           'last_result_posted', 'notes', 'diagnosis', 'bio')}),
         (
-            _('Permissions'),
+            None,
             {
-                'fields': (
-                    'is_active',
-                    'is_staff',
-                    'is_superuser',
-                    'is_therapist',
-                    'assignment_active',
+                "fields": (
+                    "email",
+                    "password",
+                    "name",
+                    "assigned_tasks",
+                    "image",
+                    "phone",
+                    "location",
+                    "country",
+                    "company",
+                    "therapist_code",
+                    "assigned_to",
+                    "day_streak",
+                    "last_result_posted",
+                    "notes",
+                    "diagnosis",
+                    "bio",
                 )
-            }
+            },
         ),
-        (_('Important data'), {'fields': ('last_login',)}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "is_therapist",
+                    "assignment_active",
+                )
+            },
+        ),
+        (_("Important data"), {"fields": ("last_login",)}),
     )
-    readonly_fields = ['last_login']
+    readonly_fields = ["last_login"]
 
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': (
-                'email',
-                'password1',
-                'password2',
-                'name',
-                'is_active',
-                'is_staff',
-                'is_superuser',
-                'is_therapist',
-            )
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "email",
+                    "password1",
+                    "password2",
+                    "name",
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "is_therapist",
+                ),
+            },
+        ),
     )
 
 
