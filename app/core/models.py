@@ -152,21 +152,6 @@ class Task(models.Model):
         return self.name
 
 
-class Question(models.Model):
-    """Model for storing a question"""
-
-    heading = models.CharField(max_length=255, blank=True)
-    choices = models.ManyToManyField("BasicChoice")
-    assigned_to = models.ForeignKey(
-        Task,
-        related_name="questions",
-        on_delete=models.CASCADE,
-    )
-
-    def __str__(self):
-        return self.heading
-
-
 class CustomQuestion(models.Model):
     """Model for storing a question"""
 

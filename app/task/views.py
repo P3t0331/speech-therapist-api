@@ -21,7 +21,6 @@ from core.permissions import (
     IsTaskResultMyPatient,
 )
 from core.models import Task, BasicChoice, Tag, TaskResult
-from core.exceptions import UpdateNotAllowedException
 from task import serializers
 
 
@@ -84,7 +83,6 @@ def check_permissions(self):
                 OpenApiTypes.STR,
                 enum=[
                     "Connect_Pairs_Text-Image",
-                    "Connect_Pairs_Text-Image-custom",
                     "Connect_Pairs_Text-Text",
                     "Four_Choices_Image-Texts",
                     "Four_Choices_Text-Images",
@@ -100,7 +98,6 @@ def check_permissions(self):
                 OpenApiTypes.STR,
                 enum=[
                     "Connect_Pairs_Text-Image",
-                    "Connect_Pairs_Text-Image-custom",
                     "Connect_Pairs_Text-Text",
                     "Four_Choices_Image-Texts",
                     "Four_Choices_Text-Images",
@@ -116,7 +113,6 @@ def check_permissions(self):
                 OpenApiTypes.STR,
                 enum=[
                     "Connect_Pairs_Text-Image",
-                    "Connect_Pairs_Text-Image-custom",
                     "Connect_Pairs_Text-Text",
                     "Four_Choices_Image-Texts",
                     "Four_Choices_Text-Images",
@@ -129,7 +125,7 @@ def check_permissions(self):
 class TaskViewSet(viewsets.ModelViewSet):
     """View for manage Task APIs"""
 
-    serializer_class = serializers.TaskDetailSerializer
+    serializer_class = serializers.ConnectPairsTaskDetailSerializer
     queryset = Task.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -197,8 +193,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         the default `TaskDetailSerializer` will be used.
         The possible values for the `task_type` query parameter
         and the corresponding serializer classes are:
-            - Connect_Pairs_Text-Image: `TaskDetailSerializer`
-            - Connect_Pairs_Text-Text: `CustomTaskDetailSerializer`
+            - Connect_Pairs_Text-Image: `ConnectPairsTaskDetailSerializer`
+            - Connect_Pairs_Text-Text: `ConnectPairsTaskDetailSerializer`
             - Four_Choices_Image-Texts: `FourChoicesTaskDetailSerializer`
             - Four_Choices_Text-Images: `FourChoicesTaskDetailSerializer`
         """
@@ -211,9 +207,9 @@ class TaskViewSet(viewsets.ModelViewSet):
             return serializers.RandomTaskSerializer
         elif (
             task_param == "Connect_Pairs_Text-Text"
-            or task_param == "Connect_Pairs_Text-Image-custom"
+            or task_param == "Connect_Pairs_Text-Image"
         ):
-            return serializers.CustomTaskDetailSerializer
+            return serializers.ConnectPairsTaskDetailSerializer
         elif (
             task_param == "Four_Choices_Image-Texts"
             or task_param == "Four_Choices_Text-Images"
@@ -231,22 +227,13 @@ class TaskViewSet(viewsets.ModelViewSet):
         """
         if (
             self.get_serializer_class()
-            == serializers.CustomTaskDetailSerializer
+            == serializers.ConnectPairsTaskDetailSerializer
             or self.get_serializer_class()
             == serializers.FourChoicesTaskDetailSerializer
         ):
             serializer.save(created_by=self.request.user, is_custom=True)
         else:
             serializer.save(created_by=self.request.user)
-
-    def update(self, request, *args, **kwargs):
-        """Update a Task"""
-        if self.get_serializer_class() == serializers.TaskDetailSerializer:
-            raise UpdateNotAllowedException(
-                {"detail":
-                 "Update is not allowed for this generated task type"}
-            )
-        return super().update(request, *args, **kwargs)
 
     @action(
         methods=["PATCH"],

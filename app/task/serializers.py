@@ -6,7 +6,6 @@ import random
 from rest_framework import serializers
 from core.models import (
     Task,
-    Question,
     BasicChoice,
     Tag,
     TaskResult,
@@ -149,45 +148,14 @@ class FourChoiceSerializer(BasicChoiceSerializer):
         return instance
 
 
-class QuestionSerializer(serializers.ModelSerializer):
-    """Serializer for Questions"""
-
-    choices = BasicChoiceSerializer(many=True, required=False)
-
-    class Meta:
-        model = Question
-        fields = ["id", "heading", "choices"]
-        read_only_fields = ["id"]
-
-    def _get_choices(self, question):
-        """
-        Populate the `choices` field of a Question instance.
-        This method randomly selects 3 BasicChoice instances and adds them to
-        the `choices` field of the given Question instance.
-        """
-        choices = list(BasicChoice.objects.all())
-        random_choices = random.sample(choices, 3)
-        for choice in random_choices:
-            question.choices.add(choice)
-
-    def create(self, validated_data):
-        """
-        Create and return a new Question instance, given the validated data.
-        This method uses the `_get_choices()` method to populate the `choices`
-        field of the Question instance.
-        """
-        question = Question.objects.create(**validated_data)
-        self._get_choices(question)
-        return question
-
-
-class CustomQuestionSerializer(QuestionSerializer):
+class CustomQuestionSerializer(serializers.ModelSerializer):
     """Serializer for Custom Questions"""
 
     choices = CustomChoiceSerializer(many=True, required=True)
 
-    class Meta(QuestionSerializer.Meta):
+    class Meta:
         model = CustomQuestion
+        read_only_fields = ["id"]
         fields = ["id", "choices"]
 
     def _get_or_create_choices(self, question, choices):
@@ -203,7 +171,7 @@ class CustomQuestionSerializer(QuestionSerializer):
     def create(self, validated_data):
         """Create a new custom question"""
         choices = validated_data.pop("choices", [])
-        question = Question.objects.create(**validated_data)
+        question = CustomQuestion.objects.create(**validated_data)
         self._get_or_create_choices(question, choices)
         return question
 
@@ -234,34 +202,23 @@ class FourQuestionSerializer(serializers.ModelSerializer):
         return question
 
 
-class TaskDetailSerializer(serializers.ModelSerializer):
+class ConnectPairsTaskDetailSerializer(serializers.ModelSerializer):
     """
-    Serializer for Tasks.
-    Handles the serialization of tasks and their associated tags and questions.
+    Serializer for connect pairs tasks.
+    Handles the serialization of connect pairs tasks and their associated
+    questions and tags.
     """
 
+    questions = CustomQuestionSerializer(
+        many=True, required=False, source="custom_questions"
+    )
     tags = TagSerializer(many=True, required=False)
-    questions = QuestionSerializer(many=True, required=False)
 
     class Meta:
         model = Task
         fields = ["id", "name", "type", "difficulty", "created_by", "tags",
                   "questions"]
         read_only_fields = ["id", "created_by"]
-
-    def _get_choices(self, question, task):
-        """
-        Helper function to retrieve random choices for a given question and
-        task.
-        Adds the chosen choices to the question and assigns them to the task.
-        """
-        choices = list(
-            BasicChoice.objects.exclude(assigned_to=task).filter(created_by=1)
-        )
-        random_choices = random.sample(choices, 3)
-        for choice in random_choices:
-            choice.assigned_to.add(task)
-            question.choices.add(choice)
 
     def _get_or_create_tags(self, tags, task):
         """
@@ -276,51 +233,9 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             )
             task.tags.add(tag_obj)
 
-    def _generate_questions(self, task):
-        """
-        Helper function to generate questions for a given task.
-        Adds the generated questions to the task.
-        """
-        for i in range(10):
-            question = Question.objects.create(heading=f"Otazka{i}",
-                                               assigned_to=task)
-            self._get_choices(question, task)
-
-    def create(self, validated_data):
-        """
-        Create a task.
-        Generates questions and tags for the task.
-        """
-        tags = validated_data.pop("tags", [])
-        task = Task.objects.create(**validated_data)
-        if len(list(BasicChoice.objects.exclude(assigned_to=task))) < 30:
-            raise serializers.ValidationError(
-                "There is not enough data to create exercise"
-            )
-        self._generate_questions(task)
-        self._get_or_create_tags(tags, task)
-        return task
-
-
-class CustomTaskDetailSerializer(TaskDetailSerializer):
-    """
-    Serializer for custom Tasks.
-    Extends the base TaskDetailSerializer to handle custom questions.
-    """
-
-    questions = CustomQuestionSerializer(
-        many=True, required=True, source="custom_questions"
-    )
-
-    class Meta:
-        model = Task
-        fields = ["id", "name", "type", "difficulty", "created_by", "tags",
-                  "questions"]
-        read_only_fields = ["id", "created_by"]
-
     def _create_questions(self, task, questions):
         """
-        Helper function to create custom questions for a given task.
+        Helper function to create four choice questions for a given task.
         Adds the created questions to the task.
         """
         auth_user = self.context["request"].user
@@ -342,22 +257,67 @@ class CustomTaskDetailSerializer(TaskDetailSerializer):
                     choice_obj.tags.add(tag_obj)
                 question_obj.choices.add(choice_obj)
 
+    def _get_choices_text_image(self, question, task):
+        """
+        Helper function to generate four choices questions with an image and
+        text choices.
+        Adds the generated choices to the provided question.
+        """
+        choices = list(
+            BasicChoice.objects.exclude(assigned_to=task).filter(created_by=1)
+        )
+        random_choices = random.sample(choices, 3)
+        request = self.context.get("request")
+        for basic_choice in random_choices:
+            tags = basic_choice.tags.all()
+            choice = CustomChoice.objects.create(
+                data1=basic_choice.data1,
+                data2=request.build_absolute_uri(basic_choice.data2.url),
+                assigned_to=task,
+                created_by=self.context["request"].user,
+            )
+            for tag in tags:
+                choice.tags.add(tag)
+            question.choices.add(choice)
+
+    def _generate_questions(self, task, type):
+        """
+        Helper function to generate four choices questions for a given task.
+        Generates the questions based on the provided type.
+        """
+        for _ in range(10):
+            question = CustomQuestion.objects.create(assigned_to=task)
+            self._get_choices_text_image(question, task)
+
     def create(self, validated_data):
         """
-        Create a custom task.
-        Generates custom questions and tags for the task.
+        Create a four choices task.
+        Generates four choices questions if no questions are provided
+        in the validated data.
+        Adds the generated/provided questions and tags to the task.
         """
         questions = validated_data.pop("custom_questions", [])
         tags = validated_data.pop("tags", [])
         task = Task.objects.create(**validated_data)
-        self._create_questions(task, questions)
+        if questions == []:
+            if len(list(BasicChoice.objects.exclude(assigned_to=task))) < 30:
+                raise serializers.ValidationError(
+                    "There is not enough data to create exercise"
+                )
+            if validated_data.get("type") == "Connect_Pairs_Text-Text":
+                raise serializers.ValidationError(
+                    "Question field is mandatory for this task type"
+                )
+            self._generate_questions(task, task.type)
+        else:
+            self._create_questions(task, questions)
         self._get_or_create_tags(tags, task)
         return task
 
     def update(self, instance, validated_data):
         """
         Update task.
-        Updates the task's custom questions and tags if provided.
+        Updates the task's questions and tags if provided.
         """
         tags = validated_data.pop("tags", None)
         questions = validated_data.pop("custom_questions", None)
@@ -366,9 +326,7 @@ class CustomTaskDetailSerializer(TaskDetailSerializer):
             self._get_or_create_tags(tags, instance)
 
         if questions is not None:
-            CustomQuestion.objects.all().filter(
-                assigned_to=instance.id
-            ).delete()
+            CustomQuestion.objects.all().filter(assigned_to=instance.id).delete()
             self._create_questions(instance, questions)
 
         for attr, value in validated_data.items():
@@ -421,6 +379,7 @@ class FourChoicesTaskDetailSerializer(serializers.ModelSerializer):
             for choice in choices:
                 tags = choice.pop("tags", [])
                 choice_obj = FourChoice.objects.create(
+                    assigned_to=task,
                     **choice,
                 )
                 for tag in tags:
@@ -536,17 +495,17 @@ class FourChoicesTaskDetailSerializer(serializers.ModelSerializer):
         return instance
 
 
-class TaskSerializer(TaskDetailSerializer):
+class TaskSerializer(ConnectPairsTaskDetailSerializer):
     """Serializer for Task detail view"""
 
-    class Meta(TaskDetailSerializer.Meta):
+    class Meta(ConnectPairsTaskDetailSerializer.Meta):
         fields = ["id", "name", "type", "difficulty", "created_by", "tags"]
 
 
-class RandomTaskSerializer(TaskDetailSerializer):
+class RandomTaskSerializer(ConnectPairsTaskDetailSerializer):
     """Serializer for RandomTask view"""
 
-    class Meta(TaskDetailSerializer.Meta):
+    class Meta(ConnectPairsTaskDetailSerializer.Meta):
         fields = ["id", "name", "type", "difficulty", "created_by", "tags"]
         read_only_fields = ["id", "name", "type", "difficulty", "created_by",
                             "tags"]
